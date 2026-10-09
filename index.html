@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#080d19" />
+  <meta name="description" content="A real-time space science party game. Decode the evidence. Decide what the signal means." />
+  <meta property="og:title" content="Contact Protocol — Decode the unknown" />
+  <meta property="og:description" content="A room-code science mystery for 2–8 players. Choose what to investigate, then decide what the evidence means." />
+  <meta property="og:image" content="cover.svg" />
+  <title>Contact Protocol — Decode the unknown</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+  <link rel="stylesheet" href="./styles.css" />
+
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar"><div class="brand"><div class="brand-mark">✳</div> CONTACT PROTOCOL</div><div class="top-status"><i class="dot"></i><span>MISSION CONTROL ONLINE</span></div></header>
+    <section id="homeView">
+      <div class="hero">
+        <div><div class="eyebrow">A cooperative science mystery</div><h1>Decode the<br/><span>unknown.</span></h1><p class="hero-copy">A strange signal is waiting in the dark. Pool your observations, choose what to investigate, and decide what the evidence really says.</p><div class="hero-note"><b>✦</b> 2–8 PLAYERS <span>·</span> 5 MISSIONS <span>·</span> 8–12 MIN</div></div>
+        <div class="signal-art" aria-hidden="true"><div class="orbit"></div><div class="orbit"></div><div class="orbit"></div><div class="planet"></div><i class="star s1"></i><i class="star s2"></i><i class="star s3"></i><i class="star s4"></i><div class="signal-line"><svg viewBox="0 0 500 100" preserveAspectRatio="none"><path class="faint" d="M0 50H500"/><path d="M0 50h73l12-2 8 4 9-5 7 2h37l8-4 8 9 9-12 10 8h42l12-2 8 3 9-4 8 3h38l8-3 9 8 9-12 9 7h45l12-2 8 4 9-4h80"/></svg></div><div class="signal-label">INCOMING TRANSMISSION / 01</div></div>
+      </div>
+      <div class="lobby-card">
+        <div class="card-kicker">Open a secure channel</div><h2>Bring your crew together.</h2><p>Host a mission or join a crew already in orbit.</p>
+        <div class="entry-form"><div><label class="field-label" for="playerName">Your callsign</label><input id="playerName" class="text-input" maxlength="18" placeholder="e.g. Nova" autocomplete="nickname" /></div><div class="actions"><button id="hostBtn" class="btn btn-primary">Create a mission <span>↗</span></button><button id="showJoinBtn" class="btn btn-quiet">Join with a code</button></div><div id="joinFields" class="hidden"><label class="field-label" for="roomCode">Mission room code</label><input id="roomCode" class="text-input code-input" maxlength="6" placeholder="ENTER CODE" autocomplete="off"/><button id="joinBtn" class="btn btn-primary" style="width:100%;margin-top:9px">Join crew ↗</button></div></div>
+        <div class="smallprint">SCORING: +2 RP FOR A SOUND TEST · +2 RP FOR THE CORRECT HYPOTHESIS · CREW BONUS FOR BROAD EVIDENCE &amp; CONSENSUS</div>
+        <div class="smallprint">NO DOWNLOAD · NO ACCOUNTS · YOUR CREW'S DEVICES CONNECT DIRECTLY</div>
+      </div>
+      <div class="how"><div class="how-card"><div class="how-number">01 / OBSERVE</div><h3>Read the signal</h3><p>Each mission begins with a puzzling set of observations.</p></div><div class="how-card"><div class="how-number">02 / INVESTIGATE</div><h3>Choose a test</h3><p>Your crew picks which scientific evidence to uncover.</p></div><div class="how-card"><div class="how-number">03 / INTERPRET</div><h3>Make your call</h3><p>Lock in a hypothesis, then see what the data says.</p></div></div>
+    </section>
+    <section id="gameView" class="hidden"></section>
+    <footer class="footer"><span>CONTACT PROTOCOL <span>·</span> FIELD RESEARCH DIVISION</span><span>THE UNIVERSE IS UNDER NO OBLIGATION TO MAKE SENSE.</span></footer>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./src/app.js"></script>
+
+</body>
+</html>

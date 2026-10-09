@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <radialGradient id="bg" cx="22%" cy="5%" r="95%"><stop stop-color="#172b48"/><stop offset=".53" stop-color="#0b1425"/><stop offset="1" stop-color="#080d19"/></radialGradient>
+    <radialGradient id="planet" cx="30%" cy="26%" r="78%"><stop stop-color="#d2f5ee"/><stop offset=".3" stop-color="#80b8bd"/><stop offset=".67" stop-color="#405b83"/><stop offset="1" stop-color="#16213a"/></radialGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#7ee7df" stop-opacity="0"/><stop offset=".48" stop-color="#7ee7df"/><stop offset="1" stop-color="#7ee7df" stop-opacity="0"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g fill="#d9ebff" opacity=".78"><circle cx="91" cy="102" r="2"/><circle cx="202" cy="481" r="2"/><circle cx="341" cy="169" r="1.8"/><circle cx="494" cy="548" r="1.5"/><circle cx="682" cy="112" r="1.6"/><circle cx="1103" cy="127" r="2"/><circle cx="1066" cy="506" r="2.2"/><circle cx="808" cy="543" r="1.7"/><circle cx="971" cy="276" r="1.4"/><circle cx="742" cy="326" r="1.2"/></g>
+  <g transform="translate(840 314)">
+    <circle r="192" fill="none" stroke="#879fbd" stroke-opacity=".14"/>
+    <circle r="146" fill="none" stroke="#879fbd" stroke-opacity=".18"/>
+    <circle r="103" fill="none" stroke="#879fbd" stroke-opacity=".21" stroke-dasharray="4 9"/>
+    <circle r="56" fill="#7ee7df" opacity=".17" filter="url(#glow)"/>
+    <circle r="49" fill="url(#planet)"/>
+    <ellipse rx="81" ry="25" fill="none" stroke="#ffc779" stroke-opacity=".57" transform="rotate(-23)"/>
+    <circle cx="-153" cy="-93" r="3" fill="#f2f8ff"/><circle cx="142" cy="86" r="3" fill="#ffc779"/>
+  </g>
+  <path d="M522 315h72l15-4 12 9 14-13 12 7h42l12-5 10 12 12-18 12 12h61" fill="none" stroke="url(#beam)" stroke-width="2" opacity=".74"/>
+  <g font-family="Arial, Helvetica, sans-serif">
+    <rect x="76" y="77" width="29" height="29" rx="8" fill="#7ee7df" fill-opacity=".1" stroke="#7ee7df" stroke-opacity=".55"/>
+    <text x="90.5" y="97" fill="#7ee7df" font-size="17" text-anchor="middle">✳</text>
+    <text x="119" y="97" fill="#edf3f7" font-size="16" font-weight="700" letter-spacing="1.2">CONTACT PROTOCOL</text>
+    <path d="M78 184h30" stroke="#7ee7df" stroke-width="2"/>
+    <text x="121" y="189" fill="#7ee7df" font-size="12" letter-spacing="2.4">A COOPERATIVE SCIENCE MYSTERY</text>
+    <text x="76" y="278" fill="#f1f3f6" font-size="74" font-weight="500" letter-spacing="-4">Decode the</text>
+    <text x="76" y="359" fill="#7ee7df" font-size="74" font-weight="500" letter-spacing="-4">unknown.</text>
+    <text x="80" y="416" fill="#a9b1c0" font-size="19">A room-code space-science party game for 2–8 players.</text>
+    <text x="80" y="455" fill="#75839a" font-size="12" font-family="monospace" letter-spacing="1.8">5 MISSIONS  ·  SHARED EVIDENCE  ·  BETTER QUESTIONS</text>
+  </g>
+</svg>

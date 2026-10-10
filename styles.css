@@ -522,15 +522,15 @@ body.mission-mode .phase-content-lobby>.lobby-preview{padding:0;border:0;backgro
 
 /* Keep the hypothesis workspace compact and its evidence legible on cockpit layouts. */
 @media(min-width:901px){
- body.mission-mode .phase-content-investigate .choice-grid{width:min(62%,700px)}
- body.mission-mode .phase-content-predict>.evidence-strip{width:min(62%,700px);max-height:96px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));grid-auto-rows:1fr;gap:7px;padding:7px}
+ body.mission-mode .phase-content-investigate .choice-grid{width:min(56%,620px)}
+ body.mission-mode .phase-content-predict>.evidence-strip{width:min(48%,520px);max-height:96px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));grid-auto-rows:1fr;gap:7px;padding:7px}
  body.mission-mode .phase-content-predict>.evidence-strip .evidence,
  body.mission-mode .phase-content-predict>.evidence-strip .observation-card{min-width:0;min-height:0;height:100%;padding:8px;font-size:9px;line-height:1.35;border:1px solid #30445c;border-left:2px solid var(--cyan);border-radius:7px;background:#0c1726}
  body.mission-mode .phase-content-predict>.evidence-strip .evidence .tag{font-size:8px;line-height:1.25}
  body.mission-mode .phase-content-predict>.evidence-strip .observation-card{grid-template-columns:20px minmax(0,1fr) 14px;gap:6px}
  body.mission-mode .phase-content-predict>.evidence-strip .observation-card strong{font-size:9px;line-height:1.25}
  body.mission-mode .phase-content-predict>.evidence-strip .observation-card small{font-size:8px;line-height:1.35;-webkit-line-clamp:3}
- body.mission-mode .answer-area{width:min(62%,700px);padding:9px;gap:7px}
+ body.mission-mode .answer-area{width:min(62%,700px);height:142px;padding:9px;gap:7px}
  body.mission-mode .answer-area>.phase-pill{font-size:9px}
  body.mission-mode .answer-area>.choice-grid{gap:7px}
  body.mission-mode .answer-area .choice{padding:8px}
@@ -540,4 +540,44 @@ body.mission-mode .phase-content-lobby>.lobby-preview{padding:0;border:0;backgro
  body.mission-mode .confidence{padding:5px 8px}
  body.mission-mode .confidence b{font-size:10px}
  body.mission-mode .confidence span{font-size:9px}
+}
+
+/* A compact, adaptive mission status strip leaves the scene as the primary UI. */
+body.mission-mode .game-main{grid-template-rows:34px 58px minmax(0,1fr)}
+body.mission-mode .room-head{height:34px;min-height:34px}
+body.mission-mode .crew-bar{min-height:58px;grid-template-columns:minmax(0,1.7fr) minmax(180px,.55fr);gap:10px;padding:5px 10px}
+body.mission-mode .crew-roster{display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));grid-auto-rows:auto;align-items:center;align-content:center;gap:3px 8px;overflow:hidden}
+body.mission-mode .crew-label{grid-column:auto;justify-self:start}
+body.mission-mode .player-row{min-width:0;gap:5px}
+body.mission-mode .player-identity{overflow:hidden}
+body.mission-mode .player-name{min-width:0;overflow:hidden;text-overflow:ellipsis}
+body.mission-mode .crew-metrics{align-content:center;padding:0 12px;border-left:1px solid #8293a833}
+body.mission-mode .crew-score{font-size:12px}
+body.mission-mode .crew-progress{height:3px}
+
+/* Dismiss the previous mission result as soon as the next mission begins. */
+body.mission-mode .finding-panel.is-exiting{pointer-events:none;animation:findingPanelOut .22s ease-out forwards}
+@keyframes findingPanelOut{to{opacity:0;transform:translateY(8px) scale(.98);filter:blur(3px)}}
+
+@media(min-width:901px){
+ body.mission-mode .observation-area{top:205px;bottom:auto;width:min(40%,490px);height:clamp(112px,18vh,145px)}
+ body.mission-mode .answer-area{grid-template-rows:auto minmax(66px,1fr) auto}
+ body.mission-mode .answer-area .choice small{-webkit-line-clamp:1}
+ body.mission-mode .confidence-row{justify-content:space-between}
+ body.mission-mode .phase-content-predict>.submit-row{left:min(calc(62% + 20px),732px);right:auto;bottom:12px;width:max-content;max-width:180px;padding:0;border:0;background:transparent;box-shadow:none;backdrop-filter:none}
+ body.mission-mode .phase-content-predict>.submit-row .hint{display:none}
+}
+
+@media(max-width:900px){
+ body.mission-mode .game-main{grid-template-rows:32px 56px minmax(0,1fr)}
+ body.mission-mode .room-head{height:32px;min-height:32px}
+ body.mission-mode .crew-bar{min-height:56px;grid-template-columns:minmax(0,1fr) 145px;grid-template-rows:1fr}
+ body.mission-mode .crew-roster{grid-column:1;grid-row:1;display:flex;flex-wrap:wrap;justify-content:flex-start}
+ body.mission-mode .crew-metrics{grid-column:2;grid-row:1;padding-left:8px}
+}
+
+@media(max-width:600px){
+ body.mission-mode .game-main{grid-template-rows:30px 52px minmax(0,1fr)}
+ body.mission-mode .room-head{height:30px;min-height:30px}
+ body.mission-mode .crew-bar{min-height:52px}
 }

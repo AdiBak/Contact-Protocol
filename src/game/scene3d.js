@@ -22,6 +22,56 @@ function sphere(radius, material, position) {
   mesh.position.set(...position); return mesh;
 }
 
+function createSurfaceTexture(kind, base, accent, label = '') {
+  const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  let seed = Array.from(label).reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) >>> 0, kind.length * 7919 + 17);
+  const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const wash = ctx.createLinearGradient(0, 0, 1024, 512);
+  wash.addColorStop(0, base); wash.addColorStop(.45, kind === 'europa' ? '#e7e1cc' : '#84705b'); wash.addColorStop(1, kind === 'mars' ? '#6e3328' : base);
+  ctx.fillStyle = wash; ctx.fillRect(0, 0, 1024, 512);
+  if (kind === 'exoplanet') {
+    for (let row = 0; row < 26; row++) {
+      const y = row * 21 - 8 + random() * 8;
+      const h = 8 + random() * 15;
+      ctx.fillStyle = row % 2 ? 'rgba(242,211,163,.13)' : 'rgba(38,36,48,.17)';
+      ctx.beginPath(); ctx.moveTo(0, y);
+      for (let x = 0; x <= 1024; x += 32) ctx.lineTo(x, y + Math.sin(x * .009 + row) * 7 + (random() - .5) * 6);
+      ctx.lineTo(1024, y + h); ctx.lineTo(0, y + h); ctx.closePath(); ctx.fill();
+    }
+    for (let i = 0; i < 9; i++) {
+      const x = random() * 1024, y = random() * 512;
+      ctx.fillStyle = 'rgba(235,205,165,.15)'; ctx.beginPath(); ctx.ellipse(x, y, 28 + random() * 75, 5 + random() * 16, random() * .2, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (kind === 'mars') {
+    for (let i = 0; i < 1250; i++) {
+      const x = random() * 1024, y = random() * 512, r = 2 + random() * 18;
+      ctx.fillStyle = random() > .5 ? 'rgba(238,157,103,.13)' : 'rgba(54,28,30,.14)';
+      ctx.beginPath(); ctx.ellipse(x, y, r * (1.3 + random()), r * .45, random() * .35, 0, Math.PI * 2); ctx.fill();
+    }
+    for (let i = 0; i < 46; i++) {
+      const x = random() * 1024, y = random() * 512, r = 5 + random() * 24;
+      ctx.beginPath(); ctx.arc(x, y, r, .12, Math.PI * 1.8); ctx.strokeStyle = 'rgba(67,35,34,.62)'; ctx.lineWidth = 2 + random() * 3; ctx.stroke();
+      ctx.beginPath(); ctx.arc(x - 1, y - 1, r * .92, Math.PI * 1.1, Math.PI * 1.85); ctx.strokeStyle = 'rgba(248,192,145,.34)'; ctx.lineWidth = 2; ctx.stroke();
+    }
+  } else if (kind === 'europa') {
+    for (let i = 0; i < 165; i++) {
+      const x = random() * 1024, y = random() * 512;
+      ctx.beginPath(); ctx.moveTo(x, y);
+      let px = x, py = y;
+      for (let j = 0; j < 5; j++) { px += (random() - .5) * 38; py += (random() - .5) * 30; ctx.lineTo(px, py); }
+      ctx.strokeStyle = random() > .5 ? 'rgba(111,126,133,.45)' : 'rgba(255,255,246,.62)'; ctx.lineWidth = 1 + random() * 2.6; ctx.stroke();
+    }
+  }
+  for (let i = 0; i < 3000; i++) {
+    const x = random() * 1024, y = random() * 512;
+    ctx.fillStyle = random() > .5 ? 'rgba(255,245,225,.07)' : 'rgba(6,11,19,.08)';
+    ctx.fillRect(x, y, 1 + random() * 3, 1 + random() * 2);
+  }
+  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = 4;
+  return texture;
+}
+
 function addPulsar(scene, accent) {
   const core = sphere(1.15, new THREE.MeshStandardMaterial({ color: '#d7faff', emissive: accent, emissiveIntensity: 2.4, roughness: .25 }), [0, 1.1, -22]);
   scene.add(core);
@@ -35,7 +85,7 @@ function addPulsar(scene, accent) {
   return { core, ring };
 }
 
-function addWorld(scene, kind, accent, worldColor, worldRadius) {
+function addWorld(scene, kind, accent, worldColor, worldRadius, label) {
   if (kind === 'pulsar') return addPulsar(scene, accent);
   if (kind === 'gamma') {
     const burst = sphere(.24, new THREE.MeshBasicMaterial({ color: '#fff3dc' }), [7, 2.5, -31]);
@@ -44,7 +94,8 @@ function addWorld(scene, kind, accent, worldColor, worldRadius) {
     wave.position.copy(burst.position); scene.add(burst, halo, wave);
     return { core: burst, glow: halo, ring: wave, gamma: true };
   }
-  const material = new THREE.MeshStandardMaterial({ color: worldColor || '#ae7564', roughness: .93, metalness: .02 });
+  const surface = createSurfaceTexture(kind, worldColor || '#ae7564', accent, label);
+  const material = new THREE.MeshStandardMaterial({ color: '#ffffff', map: surface, roughness: .93, metalness: .02 });
   const planet = sphere(worldRadius || (kind === 'mars' ? 6 : kind === 'europa' ? 4.6 : 5.4), material, [0, 1, -24]);
   scene.add(planet);
   const atmosphere = sphere(planet.geometry.parameters.radius * 1.035, new THREE.MeshBasicMaterial({ color: accent, transparent: true, opacity: .095, side: THREE.BackSide }), [0, 1, -24]); scene.add(atmosphere);
@@ -132,7 +183,7 @@ export async function prepareScene(root, mission, event) {
   const rim = new THREE.PointLight(color(mission.theme.accent, '#7ee7df'), 54, 44); rim.position.set(6, 2, -15); scene.add(rim);
   const stars = makeStars(scene);
   const kind = mission.kind || mission.theme.kind || 'planet';
-  const world = addWorld(scene, kind, mission.theme.accent, mission.theme.world, mission.theme.worldRadius);
+  const world = addWorld(scene, kind, mission.theme.accent, mission.theme.world, mission.theme.worldRadius, mission.title);
   const ship = addShip(scene, mission.theme.accent);
   const instrument = addInstrument(scene, kind, mission.theme.accent);
   const particles = new THREE.Group(); scene.add(particles);
@@ -192,7 +243,7 @@ export async function prepareScene(root, mission, event) {
   const releaseResources = () => {
     if (resourcesReleased) return;
     resourcesReleased = true;
-    scene.traverse((obj) => { obj.geometry?.dispose(); if (Array.isArray(obj.material)) obj.material.forEach((m) => m.dispose()); else obj.material?.dispose(); });
+    scene.traverse((obj) => { obj.geometry?.dispose(); if (Array.isArray(obj.material)) obj.material.forEach((m) => { Object.values(m).filter((value) => value?.isTexture).forEach((texture) => texture.dispose()); m.dispose(); }); else { if (obj.material) Object.values(obj.material).filter((value) => value?.isTexture).forEach((texture) => texture.dispose()); obj.material?.dispose(); } });
     renderer.dispose();
   };
   const dispose = () => {

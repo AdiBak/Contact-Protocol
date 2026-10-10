@@ -185,6 +185,10 @@ export async function prepareScene(root, mission, event) {
   const kind = mission.kind || mission.theme.kind || 'planet';
   const world = addWorld(scene, kind, mission.theme.accent, mission.theme.world, mission.theme.worldRadius, mission.title);
   const ship = addShip(scene, mission.theme.accent);
+  const evidenceReview = Boolean(root.closest('.phase-content-predict'));
+  const shipBaseY = evidenceReview ? -1.72 : -2.6;
+  ship.position.x = evidenceReview ? 1.45 : 0;
+  ship.position.y = shipBaseY;
   const instrument = addInstrument(scene, kind, mission.theme.accent);
   const particles = new THREE.Group(); scene.add(particles);
   const cueColor = color(mission.theme.accent, '#7ee7df');
@@ -204,7 +208,7 @@ export async function prepareScene(root, mission, event) {
     frame = requestAnimationFrame(animate);
     const t = clock.getElapsedTime();
     stars.rotation.y = t * .002; stars.rotation.x = Math.sin(t * .08) * .012;
-    ship.position.y = -2.6 + Math.sin(t * .65) * .035;
+    ship.position.y = shipBaseY + Math.sin(t * .65) * .035;
     if (world?.planet) world.planet.rotation.y = t * (kind === 'europa' ? .018 : .008);
     if (world?.terrain) world.terrain.rotation.y = (world.planet?.rotation.y || t * .008) + .28;
     if (world?.ring) world.ring.rotation.z = .3 + Math.sin(t * .11) * .02;

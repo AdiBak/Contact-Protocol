@@ -560,7 +560,7 @@ body.mission-mode .finding-panel.is-exiting{pointer-events:none;animation:findin
 @keyframes findingPanelOut{to{opacity:0;transform:translateY(8px) scale(.98);filter:blur(3px)}}
 
 @media(min-width:901px){
- body.mission-mode .observation-area{top:205px;bottom:auto;width:min(40%,490px);height:clamp(112px,18vh,145px)}
+ body.mission-mode .observation-area{top:185px;bottom:auto;width:min(38%,450px);height:clamp(84px,14vh,105px)}
  body.mission-mode .answer-area{grid-template-rows:auto minmax(66px,1fr) auto}
  body.mission-mode .answer-area .choice small{-webkit-line-clamp:1}
  body.mission-mode .confidence-row{justify-content:space-between}
@@ -580,4 +580,15 @@ body.mission-mode .finding-panel.is-exiting{pointer-events:none;animation:findin
  body.mission-mode .game-main{grid-template-rows:30px 52px minmax(0,1fr)}
  body.mission-mode .room-head{height:30px;min-height:30px}
  body.mission-mode .crew-bar{min-height:52px}
+}
+
+@media(min-width:601px){
+ body.mission-mode .game-main.crew-compact{grid-template-rows:34px 44px minmax(0,1fr)}
+ body.mission-mode .crew-compact .crew-bar{min-height:44px}
+ body.mission-mode .crew-compact .crew-roster{grid-template-rows:1fr}
+}
+
+@media(max-width:600px){
+ body.mission-mode .game-main.crew-compact{grid-template-rows:30px 44px minmax(0,1fr)}
+ body.mission-mode .crew-compact .crew-bar{min-height:44px}
 }

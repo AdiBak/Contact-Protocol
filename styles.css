@@ -738,3 +738,57 @@ body.relay-mode .relay-lobby,body.relay-mode .relay-finished{position:absolute;i
  .relay-loop{flex-wrap:wrap;justify-content:center;font-size:7px;margin-bottom:12px}
  .contact-log{width:100%;grid-template-columns:1fr}.final-signal-score{width:80px;height:80px;margin:8px}.final-signal-score strong{font-size:22px}
 }
+
+/* Hostile-planet fleet mission */
+body.combat-mode .combat-phase{position:relative;isolation:isolate;overflow:hidden;border:1px solid #26364a;border-radius:8px;background:#030812}
+.combat-scene{position:absolute;inset:0;z-index:-1;overflow:hidden}
+.combat-scene canvas{display:block;width:100%;height:100%}
+.combat-vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 48%,transparent 38%,#02050ca8 100%),linear-gradient(180deg,#13080a40,transparent 35%,#02060c55)}
+.combat-kicker{font:8px var(--mono);letter-spacing:.13em;color:var(--cyan);text-transform:uppercase}
+.combat-lobby{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:radial-gradient(circle at 50% 15%,#461d20aa,#09101d 52%,#040914)}
+.combat-lobby h1{margin:7px 0 10px;font:500 clamp(40px,6vw,72px)/.95 var(--display);letter-spacing:-.06em}
+.combat-lobby>p{max-width:680px;margin:0;color:#bec7d1;font-size:14px;line-height:1.55}
+.role-preview{width:min(760px,92%);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:22px 0 18px}
+.role-preview>div{display:grid;gap:4px;padding:12px;border:1px solid #3a4b61;border-radius:8px;background:#0c1726}.role-preview i{font-style:normal;font-size:18px;color:var(--cyan)}.role-preview strong{font:500 12px var(--display)}.role-preview span{font-size:9px;color:#8694a6}
+.combat-lobby>.btn{height:46px;padding:0 22px}.combat-lobby>small{margin-top:8px;color:#788699;font-size:9px}
+.briefing-terminal,.battle-result{position:absolute;z-index:4;border:1px solid #6a7f9466;border-radius:10px;background:linear-gradient(145deg,#07121df4,#111b2af2);box-shadow:0 18px 50px #000b;backdrop-filter:blur(13px)}
+.briefing-terminal{top:50%;left:7%;width:min(50%,620px);padding:14px 16px;transform:translateY(-50%)}
+.terminal-head{display:flex;justify-content:space-between;gap:10px;padding-bottom:8px;border-bottom:1px solid #34465c;font:8px var(--mono);letter-spacing:.1em;color:var(--cyan)}.terminal-head b{color:var(--amber)}
+#typedBriefing{height:230px;margin:11px 0;overflow:hidden;white-space:pre-wrap;color:#d2dce5;font:11px/1.52 var(--mono)}
+#typedBriefing:after{content:'▋';color:var(--cyan);animation:blink .7s infinite}
+.briefing-actions{display:flex;align-items:center;gap:10px}.briefing-actions .btn{height:38px;padding:0 13px;font-size:10px}.briefing-actions span{font-size:9px;color:#8694a6}
+.approach-status{position:absolute;z-index:3;top:12px;right:12px;width:230px;padding:10px;border:1px solid #86515166;border-radius:8px;background:#190d13d9;display:grid;gap:5px}.approach-status b{font:9px var(--mono);color:#ff9c8f}.approach-status span{font-size:9px;color:#b8a2a4}.approach-status>i{height:3px;background:#3d252d}.approach-status em{display:block;width:72%;height:100%;background:#ff7969;animation:barGrow 4s ease-out both}
+.combat-alert{position:absolute;z-index:5;top:42%;left:50%;display:grid;grid-template-columns:auto auto;gap:2px 9px;align-items:center;padding:12px 18px;border:1px solid #ff6b5d99;border-radius:8px;background:#2b0d12e8;box-shadow:0 0 34px #ff443d55;transform:translate(-50%,-50%);animation:combatAlert 3.4s both}.combat-alert>span{grid-row:span 2;font-size:22px;color:#ff7668}.combat-alert b{font:13px var(--mono);letter-spacing:.12em;color:#ff9b8f}.combat-alert em{font:8px var(--mono);font-style:normal;color:#d8b8b7}
+@keyframes combatAlert{0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}12%,72%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;visibility:hidden}}
+.objective-hud,.pilot-hud,.threat-hud{position:absolute;z-index:4;border:1px solid #4c617866;border-radius:8px;background:#08131ee8;box-shadow:0 8px 24px #0008;backdrop-filter:blur(9px)}
+.objective-hud{top:10px;left:50%;width:340px;padding:8px 10px;text-align:center;transform:translateX(-50%)}.objective-hud span,.threat-hud span{display:block;font:7px var(--mono);letter-spacing:.1em;color:#8292a5}.objective-hud b{font:9px var(--mono);color:#dce6eb}.objective-hud i{position:absolute;right:9px;top:9px;font:9px var(--mono);font-style:normal;color:var(--amber)}
+.pilot-hud{left:12px;bottom:72px;width:250px;padding:9px 10px}.pilot-hud>div{display:flex;justify-content:space-between;gap:7px;font:8px var(--mono);color:var(--cyan)}.pilot-hud>div b{color:#dce5ea}.pilot-hud>i{display:block;height:5px;margin:6px 0;border-radius:5px;background:#253448;overflow:hidden}.pilot-hud>i em{display:block;width:100%;height:100%;background:linear-gradient(90deg,#65d7a2,#7ee7df);transition:width .18s}.pilot-hud small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8px;color:#91a0b2}
+.threat-hud{top:10px;right:12px;width:150px;padding:8px 9px}.threat-hud b{display:block;margin:3px 0;font:10px var(--mono);color:#ff968a}.threat-hud small{font:8px var(--mono);color:var(--amber)}
+.flight-controls{position:absolute;z-index:5;left:50%;right:12px;bottom:8px;height:60px;display:flex;align-items:flex-end;justify-content:space-between;pointer-events:none}
+.flight-stick{position:relative;width:74px;height:74px;display:grid;place-items:center;border:1px solid #5e738a88;border-radius:50%;background:#07111dcc;box-shadow:inset 0 0 20px #000,0 5px 20px #0008;pointer-events:auto;touch-action:none}.flight-stick:before,.flight-stick:after{content:'';position:absolute;background:#53677c66}.flight-stick:before{width:1px;height:56px}.flight-stick:after{width:56px;height:1px}.flight-stick i{z-index:1;width:24px;height:24px;border:1px solid var(--cyan);border-radius:50%;background:#18303a;box-shadow:0 0 10px #7ee7df55;transition:transform .05s}.flight-stick span{position:absolute;bottom:-13px;font:7px var(--mono);color:#708095}
+.combat-buttons{display:flex;gap:7px;pointer-events:auto}.combat-buttons button{height:54px;min-width:90px;border:1px solid #53667d;border-radius:8px;background:#0c1726;color:#dbe5eb;font-weight:600}.combat-buttons button span,.combat-buttons button small{display:block}.combat-buttons button span{font-size:9px}.combat-buttons button small{margin-top:3px;font:7px var(--mono);color:var(--cyan)}.combat-buttons .fire-control{border-color:#d6635d;background:#42171c;color:#ffd7d2;font:600 12px var(--display);box-shadow:0 0 18px #ff514033}.combat-buttons button:disabled{opacity:.45}
+.battle-result{top:50%;left:50%;width:min(560px,70%);padding:20px;transform:translate(-50%,-50%);text-align:center}.battle-result.victory{border-color:#7ee7df80}.battle-result.defeat{border-color:#ff796980}.battle-result h1{margin:6px 0 9px;font:500 clamp(28px,4vw,46px)/1 var(--display);letter-spacing:-.045em}.battle-result>p{margin:0 auto;max-width:480px;color:#b9c5d0;font-size:12px;line-height:1.5}
+.battle-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:15px 0}.battle-stats span{padding:9px 5px;border:1px solid #34475e;border-radius:7px;color:#8493a5;font-size:8px}.battle-stats b{display:block;margin-bottom:3px;font:12px var(--mono);color:var(--cyan)}.battle-result>.btn{height:40px;padding:0 15px;font-size:11px}
+
+@media(max-width:760px){
+ .briefing-terminal{left:5%;width:70%}
+ #typedBriefing{height:200px;font-size:9px}
+ .objective-hud{left:8px;width:260px;transform:none;text-align:left}
+ .objective-hud i{right:8px}
+ .pilot-hud{left:7px;bottom:62px;width:210px}
+ .flight-controls{left:42%;bottom:5px}
+ .combat-buttons button{min-width:76px}
+}
+
+@media(max-width:520px){
+ .role-preview{grid-template-columns:1fr 1fr;margin:13px 0}.combat-lobby h1{font-size:38px}.combat-lobby>p{font-size:10px}
+ .briefing-terminal{top:48%;left:5px;right:5px;width:auto;padding:9px;transform:translateY(-50%)}
+ #typedBriefing{height:210px;margin:7px 0;font-size:8px;line-height:1.42}
+ .terminal-head{font-size:6px}.approach-status{top:5px;right:5px;width:145px;padding:6px}.approach-status b,.approach-status span{font-size:6px}
+ .objective-hud{top:5px;left:5px;width:230px;padding:6px}.objective-hud b{font-size:7px}.objective-hud i{font-size:7px}
+ .threat-hud{top:5px;right:5px;width:105px;padding:6px}.threat-hud b{font-size:8px}
+ .pilot-hud{left:5px;bottom:68px;width:190px;padding:6px}
+ .flight-controls{left:5px;right:5px;bottom:6px;height:58px}.flight-stick{width:60px;height:60px}.flight-stick i{width:20px;height:20px}
+ .combat-buttons button{height:48px;min-width:72px}.combat-buttons button span{font-size:8px}
+ .battle-result{width:calc(100% - 12px);padding:12px}.battle-result h1{font-size:28px}.battle-result>p{font-size:9px}.battle-stats{grid-template-columns:1fr 1fr;margin:10px 0}
+}

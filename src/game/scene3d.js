@@ -185,9 +185,9 @@ export async function prepareScene(root, mission, event) {
   const kind = mission.kind || mission.theme.kind || 'planet';
   const world = addWorld(scene, kind, mission.theme.accent, mission.theme.world, mission.theme.worldRadius, mission.title);
   const ship = addShip(scene, mission.theme.accent);
-  const measurementVote = Boolean(root.closest('.phase-content-investigate'));
-  const evidenceReview = Boolean(root.closest('.phase-content-predict'));
-  const missionDebrief = Boolean(root.closest('.phase-content-reveal'));
+  const measurementVote = Boolean(root.closest('.phase-content-investigate, .phase-relay'));
+  const evidenceReview = Boolean(root.closest('.phase-content-predict, .phase-decode'));
+  const missionDebrief = Boolean(root.closest('.phase-content-reveal, .phase-reveal'));
   const layoutCameraX = measurementVote ? -1.25 : evidenceReview ? -.35 : missionDebrief ? 1.15 : 0;
   ship.visible = false;
   const instrument = addInstrument(scene, kind, mission.theme.accent);

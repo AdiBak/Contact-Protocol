@@ -647,3 +647,94 @@ body.mission-mode .cockpit-console span:nth-child(3){width:72px;height:14px;bord
  body.mission-mode .phase-content-predict .scan-panel{bottom:72px}
  body.mission-mode .phase-content-reveal .debrief-panel{bottom:72px}
 }
+
+/* Alien Signal Relay */
+body.relay-mode .relay-phase{position:relative;isolation:isolate;overflow:hidden;border:1px solid #26364a;border-radius:8px;background:#050b17}
+body.relay-mode .relay-phase>.scene-wrap{position:absolute;inset:0;width:100%;height:100%;min-height:0;aspect-ratio:auto;border:0;border-radius:0;z-index:-1}
+body.relay-mode .relay-phase>.scene-wrap canvas{width:100%;height:100%}
+body.relay-mode .relay-brief,
+body.relay-mode .station-console,
+body.relay-mode .relay-crew-status,
+body.relay-mode .token-board,
+body.relay-mode .response-console,
+body.relay-mode .contact-result{position:absolute;z-index:3;border:1px solid #52667b66;border-radius:10px;background:linear-gradient(145deg,#091523f2,#111c2cf0);box-shadow:0 14px 34px #0008;backdrop-filter:blur(12px)}
+body.relay-mode .relay-brief{top:10px;left:10px;width:min(38%,460px);padding:11px 13px}
+body.relay-mode .relay-brief>span,.response-kicker{font:8px var(--mono);letter-spacing:.12em;color:var(--cyan);text-transform:uppercase}
+body.relay-mode .relay-brief h1{margin:4px 0 6px;font:500 clamp(20px,2.2vw,30px)/1.05 var(--display);letter-spacing:-.04em}
+body.relay-mode .relay-brief p{margin:0;color:#b8c4d1;font-size:11px;line-height:1.45}
+body.relay-mode .station-console{left:10px;bottom:70px;width:min(52%,620px);padding:11px 13px;border-color:color-mix(in srgb,var(--station-color) 50%,#52667b)}
+.station-head{display:flex;align-items:center;justify-content:space-between;gap:10px;font:8px var(--mono);letter-spacing:.1em;color:var(--cyan)}
+.station-head b{font-weight:500;color:#8494a7}
+.signal-display{margin:9px 0 8px;padding:10px;border:1px solid #6b81984d;border-radius:6px;background:repeating-linear-gradient(90deg,#07121e 0 28px,#0b1b2922 29px),#07111d;color:#e5f8f5;text-align:center;font:500 16px var(--mono);letter-spacing:.12em;text-shadow:0 0 12px var(--station-color)}
+body.relay-mode .station-console h2{margin:0 0 9px;font:500 13px/1.3 var(--display)}
+.station-options,.response-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.station-options button,.response-options button{min-width:0;border:1px solid #304159;border-radius:8px;background:#0d1828;color:#dce4eb;text-align:left;transition:.16s}
+.station-options button{display:flex;align-items:center;gap:8px;min-height:42px;padding:7px 9px;font-size:10px}
+.station-options button i{flex:none;width:20px;height:20px;display:grid;place-items:center;border:1px solid #41546b;border-radius:50%;font:8px var(--mono);color:var(--cyan)}
+.station-options button:hover:not(:disabled),.station-options button.selected,.response-options button:hover:not(:disabled),.response-options button.selected{border-color:var(--cyan);background:#102832;box-shadow:inset 0 0 0 1px #7ee7df20}
+.station-submit{display:flex;align-items:center;gap:10px;margin-top:9px}
+.station-submit .btn{height:34px;padding:0 12px;font-size:10px}
+.station-submit>span{font-size:8px;color:#8291a4}
+body.relay-mode .relay-crew-status{top:10px;right:10px;width:220px;padding:9px 10px;display:grid;gap:6px}
+.relay-crew-status>b{font:8px var(--mono);letter-spacing:.1em;color:#8291a4}
+.relay-crew-status>span{display:flex;align-items:center;gap:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;color:#9eabba}
+.relay-crew-status i{width:6px;height:6px;flex:none;border-radius:50%;background:#526073}
+.relay-crew-status .ready{color:#d7e6e7}.relay-crew-status .ready i{background:var(--cyan);box-shadow:0 0 7px var(--cyan)}
+body.relay-mode .token-board{top:116px;left:10px;width:min(46%,540px);padding:9px 10px}
+.token-board>div:last-child{display:flex;gap:6px;margin-top:7px;overflow-x:auto;scrollbar-width:thin}
+.relay-token{flex:1 0 135px;min-width:0;display:flex;align-items:center;gap:7px;padding:7px 8px;border:1px solid #33455d;border-radius:7px;background:#0b1625}
+.relay-token>span{color:var(--cyan);font-size:14px}.relay-token div{min-width:0}.relay-token small,.relay-token strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.relay-token small{font-size:7px;color:#8190a2}.relay-token strong{margin-top:2px;font:9px var(--mono);color:#dce9e8}.relay-token.static{border-color:#8c674a}.relay-token.static strong{color:var(--amber)}
+body.relay-mode .response-console{left:10px;bottom:70px;width:min(56%,660px);padding:11px 12px}
+.response-console h2{margin:4px 0 9px;font:500 17px var(--display)}
+.response-options button{min-height:54px;padding:9px;display:flex;align-items:flex-start;gap:7px}
+.response-options button i{color:var(--cyan);font-style:normal}.response-options button span{font-size:10px;line-height:1.35}
+body.relay-mode .contact-result{top:50%;right:16px;width:min(43%,520px);padding:16px;transform:translateY(-50%)}
+.contact-result.success{border-color:#7ee7df70}.contact-result.uncertain{border-color:#ffc77970}
+.contact-result h1{margin:5px 0 9px;font:500 clamp(24px,3vw,38px)/1.05 var(--display)}
+.contact-result p{margin:7px 0;color:#bec8d2;font-size:11px;line-height:1.5}.contact-result p strong{color:#f0f3f5}
+.relay-score{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:12px 0}
+.relay-score span{padding:8px;border:1px solid #304159;border-radius:7px;font-size:8px;color:#8998aa}.relay-score b{display:block;margin-bottom:3px;font:11px var(--mono);color:var(--cyan)}
+.contact-result>.btn{height:38px;padding:0 14px;font-size:11px}
+body.relay-mode .relay-lobby,body.relay-mode .relay-finished{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:radial-gradient(circle at 50% 35%,#17283e,#07101d 67%)}
+.relay-lobby h1,.relay-finished h1{margin:7px 0 9px;font:500 clamp(36px,5vw,64px)/1 var(--display);letter-spacing:-.055em}.relay-lobby>p,.relay-finished>p{max-width:700px;margin:0;color:#b9c4d1;font-size:14px;line-height:1.55}
+.relay-route{width:min(900px,90%);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:22px 0}
+.relay-stop{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;color:#758396;font-size:9px}.relay-stop i{width:23px;height:23px;display:grid;place-items:center;flex:none;border:1px solid #40536a;border-radius:50%;font:8px var(--mono);font-style:normal}.relay-stop span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.relay-stop.current i{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 12px #7ee7df44}.relay-stop.complete i{border-color:#6bd1a0;color:#92e8bb}.relay-stop.uncertain i{border-color:#b28a55;color:#ffc779}
+.relay-loop{display:flex;align-items:center;gap:10px;margin-bottom:20px;font:9px var(--mono);color:#a8b5c4}.relay-loop b{color:var(--cyan)}
+.relay-lobby>.btn{height:46px;padding:0 22px}
+.final-signal-score{display:grid;place-items:center;width:118px;height:118px;margin:14px;border:1px solid #7ee7df70;border-radius:50%;box-shadow:0 0 30px #7ee7df25}.final-signal-score strong{font:500 30px var(--display);color:var(--cyan)}.final-signal-score span{font:7px var(--mono);color:#8d9bad}
+.relay-finished .relay-route{margin:6px 0 12px}.contact-log{width:min(760px,90%);display:grid;grid-template-columns:1fr 1fr;gap:6px}.contact-log-row{display:grid;grid-template-columns:25px minmax(0,1fr) auto;align-items:center;gap:7px;padding:7px 9px;border:1px solid #304159;border-radius:7px;background:#0b1624;text-align:left}.contact-log-row>i{font:8px var(--mono);font-style:normal;color:var(--cyan)}.contact-log-row strong,.contact-log-row span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.contact-log-row strong{font-size:10px}.contact-log-row span{font-size:8px;color:#8795a7}.contact-log-row>b{font:9px var(--mono);color:var(--amber)}.finish-actions{display:flex;gap:8px;margin-top:13px}.finish-actions .btn{height:38px;padding:0 13px;font-size:10px}
+
+@media(max-width:900px){
+ body.relay-mode .relay-brief{width:48%}
+ body.relay-mode .station-console{width:64%}
+ body.relay-mode .relay-crew-status{width:190px}
+ body.relay-mode .token-board{width:54%}
+ body.relay-mode .response-console{width:68%}
+}
+
+@media(max-width:600px){
+ body.relay-mode .relay-brief{top:5px;left:5px;right:5px;width:auto;padding:7px 8px}
+ body.relay-mode .relay-brief h1{font-size:18px;margin:2px 0 3px}
+ body.relay-mode .relay-brief p{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:9px;line-height:1.25}
+ body.relay-mode .relay-crew-status{display:none}
+ body.relay-mode .station-console{left:5px;right:5px;bottom:45px;width:auto;padding:8px}
+ .signal-display{margin:6px 0;padding:7px;font-size:12px}
+ body.relay-mode .station-console h2{font-size:11px;margin-bottom:6px}
+ .station-options,.response-options{gap:4px}
+ .station-options button{min-height:38px;padding:5px;font-size:8px;gap:4px}
+ .station-options button i{width:17px;height:17px}
+ .station-submit{margin-top:6px}
+ body.relay-mode .token-board{top:88px;left:5px;right:5px;width:auto;padding:6px}
+ .relay-token{flex-basis:105px;padding:5px}.relay-token small{font-size:6px}.relay-token strong{font-size:8px}
+ body.relay-mode .response-console{left:5px;right:5px;bottom:45px;width:auto;padding:8px}
+ .response-console h2{font-size:14px;margin:3px 0 6px}
+ .response-options button{min-height:45px;padding:6px;font-size:8px}
+ .response-options button span{font-size:8px}
+ body.relay-mode .contact-result{top:auto;left:5px;right:5px;bottom:45px;width:auto;padding:10px;transform:none}
+ .contact-result h1{font-size:22px}.contact-result p{font-size:9px;line-height:1.3}.relay-score{margin:8px 0}
+ body.relay-mode .relay-lobby,body.relay-mode .relay-finished{padding:12px 8px}
+ .relay-lobby h1,.relay-finished h1{font-size:32px}.relay-lobby>p,.relay-finished>p{font-size:10px}
+ .relay-route{width:100%;margin:12px 0}.relay-stop{font-size:7px}.relay-stop span{display:none}
+ .relay-loop{flex-wrap:wrap;justify-content:center;font-size:7px;margin-bottom:12px}
+ .contact-log{width:100%;grid-template-columns:1fr}.final-signal-score{width:80px;height:80px;margin:8px}.final-signal-score strong{font-size:22px}
+}

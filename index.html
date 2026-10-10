@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#080d19" />
-  <meta name="description" content="A cooperative science expedition. Explore immersive scenes, pool evidence, and build a crew field report." />
+  <meta name="description" content="A cooperative alien signal game. Solve private consoles, relay clues, and decide together how humanity should answer." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta property="og:title" content="Contact Protocol — Decode the unknown" />
-  <meta property="og:description" content="A cooperative science expedition for 2–8 players. Explore, pool evidence, and build a crew field report together." />
+  <meta property="og:title" content="Contact Protocol — Alien Signal Relay" />
+  <meta property="og:description" content="A cooperative alien signal relay for 2–8 players. Solve private consoles and make first contact together." />
   <meta property="og:image" content="cover.svg" />
-  <title>Contact Protocol — Decode the unknown</title>
+  <title>Contact Protocol — Alien Signal Relay</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -22,22 +22,22 @@
     <header class="topbar"><div class="brand"><div class="brand-mark">✳</div> CONTACT PROTOCOL</div><div class="top-status"><i class="dot"></i><span>MISSION CONTROL ONLINE</span></div></header>
     <section id="homeView">
       <div class="hero">
-        <div><div class="eyebrow">A cooperative science expedition</div><h1>Decode the<br/><span>unknown.</span></h1><p class="hero-copy">Fly cinematic 3D science missions, inspect instruments together, vote on measurements, and leave a field report shaped by your crew. Each expedition draws a fresh cataloged exoplanet target when live science data is available.</p><div class="hero-note"><b>✦</b> 2–8 PLAYERS <span>·</span> 5 MISSIONS <span>·</span> 8–12 MIN</div></div>
+        <div><div class="eyebrow">A cooperative first-contact game</div><h1>Relay the<br/><span>unknown.</span></h1><p class="hero-copy">Every operator receives a different piece of an alien transmission. Solve your private console, describe what you found, and decide together how humanity should answer.</p><div class="hero-note"><b>✦</b> 2–8 PLAYERS <span>·</span> 4 SIGNALS <span>·</span> 6–10 MIN</div></div>
         <div class="signal-art" aria-hidden="true"><div class="orbit"></div><div class="orbit"></div><div class="orbit"></div><div class="planet"></div><i class="star s1"></i><i class="star s2"></i><i class="star s3"></i><i class="star s4"></i><div class="signal-line"><svg viewBox="0 0 500 100" preserveAspectRatio="none"><path class="faint" d="M0 50H500"/><path d="M0 50h73l12-2 8 4 9-5 7 2h37l8-4 8 9 9-12 10 8h42l12-2 8 3 9-4 8 3h38l8-3 9 8 9-12 9 7h45l12-2 8 4 9-4h80"/></svg></div><div class="signal-label">INCOMING TRANSMISSION / 01</div></div>
       </div>
       <div class="lobby-card">
-        <div class="card-kicker">Open a secure channel</div><h2>Bring your crew together.</h2><p>Host a mission or join a crew already in orbit.</p>
+        <div class="card-kicker">Open a relay channel</div><h2>Bring your crew together.</h2><p>Host a signal room or join a crew already listening.</p>
         <div class="entry-form"><div><label class="field-label" for="playerName">Your callsign</label><input id="playerName" class="text-input" maxlength="18" placeholder="e.g. Nova" autocomplete="nickname" /></div><div class="actions"><button id="hostBtn" class="btn btn-primary">Create a mission <span>↗</span></button><button id="showJoinBtn" class="btn btn-quiet">Join with a code</button></div><div id="joinFields" class="hidden"><label class="field-label" for="roomCode">Mission room code</label><input id="roomCode" class="text-input code-input" maxlength="6" placeholder="ENTER CODE" autocomplete="off"/><button id="joinBtn" class="btn btn-primary" style="width:100%;margin-top:9px">Join crew ↗</button></div></div>
-        <div class="smallprint">SHARED SCIENCE ENERGY · CREW FINDINGS · FIVE LINKED MISSIONS</div>
+        <div class="smallprint">PRIVATE CONSOLES · SHARED CLUES · FOUR UNKNOWN SIGNALS</div>
         <div class="smallprint">NO DOWNLOAD · NO ACCOUNTS · YOUR CREW'S DEVICES CONNECT DIRECTLY</div>
       </div>
-      <div class="how"><div class="how-card"><div class="how-number">01 / EXPLORE</div><h3>Step into the mission</h3><p>Explore a cinematic 3D science scene, inspect instruments, and share discoveries with the crew.</p></div><div class="how-card"><div class="how-number">02 / INVESTIGATE</div><h3>Spend energy wisely</h3><p>Vote privately on scans. The crew funds popular evidence within its shared budget.</p></div><div class="how-card"><div class="how-number">03 / INTERPRET</div><h3>Make a careful call</h3><p>Build a five-stop field report from findings, open questions, and the evidence behind them.</p></div></div>
+      <div class="how"><div class="how-card"><div class="how-number">01 / SOLVE</div><h3>Work your private console</h3><p>Match rhythms, complete symbols, trace coordinates, and recover your piece of the transmission.</p></div><div class="how-card"><div class="how-number">02 / RELAY</div><h3>Tell the crew what you found</h3><p>No one receives the whole message. Every operator holds information the others need.</p></div><div class="how-card"><div class="how-number">03 / RESPOND</div><h3>Make first contact together</h3><p>Combine the fragments and choose a careful crew response before the signal fades.</p></div></div>
     </section>
     <section id="gameView" class="hidden"></section>
-    <footer class="footer"><span>CONTACT PROTOCOL <span>·</span> FIELD RESEARCH DIVISION</span><span>THE UNIVERSE IS UNDER NO OBLIGATION TO MAKE SENSE.</span></footer>
+    <footer class="footer"><span>CONTACT PROTOCOL <span>·</span> DEEP-SPACE RELAY</span><span>NO ONE RECEIVES THE WHOLE MESSAGE.</span></footer>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./src/app.js"></script>
+  <script type="module" src="./src/relay-app.js"></script>
 
 </body>
 </html>

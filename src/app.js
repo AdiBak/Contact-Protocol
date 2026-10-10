@@ -1,4 +1,4 @@
-import { buildTargetMission, missionForRound, missions } from './content/missions.js';
+import { buildExpeditionSequence, buildTargetMission, missionForRound, missions } from './content/missions.js';
 import { allDone, expeditionOutcome, majorityReached, publicState, RESEARCH_BUDGET, resolveRound, resolveScans } from './game/rules.js';
 import { sceneMarkup } from './game/scene.js';
 import { esc } from './game/text.js';
@@ -30,6 +30,15 @@ import { esc } from './game/text.js';
     return fetch('/api/mission', { signal: AbortSignal.timeout(6500) })
       .then((response) => response.ok ? response : null)
       .catch(() => null);
+  }
+
+  function shuffledIndices(length) {
+    const order = Array.from({ length }, (_, index) => index);
+    for (let index = order.length - 1; index > 0; index -= 1) {
+      const swap = Math.floor(Math.random() * (index + 1));
+      [order[index], order[swap]] = [order[swap], order[index]];
+    }
+    return order;
   }
 
   function toast(message) {
@@ -157,7 +166,8 @@ import { esc } from './game/text.js';
     state.lastResult = null;
     state.journeyLog = [];
     state.missionVariants = missions.map((mission) => mission.variants?.length ? crypto.getRandomValues(new Uint8Array(1))[0] % mission.variants.length : 0);
-    state.missionOrder = missions.map((_, index) => index).sort(() => Math.random() - .5);
+    state.missionOrder = shuffledIndices(missions.length);
+    state.missionSequence = buildExpeditionSequence(state, missions);
     resetMissionPlayers();
     state.phase = 'explore';
     broadcast();
@@ -184,6 +194,7 @@ import { esc } from './game/text.js';
     state.lastResult = null;
     state.journeyLog = [];
     state.missionVariants = null;
+    state.missionSequence = null;
     resetMissionPlayers();
     state.players.forEach((player) => { player.score = 0; });
     targetDataPromise = fetchMissionTarget();

@@ -117,10 +117,7 @@ export function buildTargetMission(target) {
   return mission;
 }
 
-export function missionForRound(state, catalog) {
-  const index = state.missionOrder?.[state.round] ?? state.round;
-  const mission = index === 1 && state.dynamicTargetMission ? state.dynamicTargetMission : (catalog[index] || catalog[0]);
-  const variant = mission.variants?.[state.missionVariants?.[state.round] || 0];
+function applyVariant(mission, variant) {
   if (!variant) return mission;
   return {
     ...mission,
@@ -130,4 +127,19 @@ export function missionForRound(state, catalog) {
     hotspots: mission.hotspots.map((point, index) => ({ ...point, text: variant.hotspotTexts?.[index] || point.text })),
     tests: mission.tests.map((test, index) => ({ ...test, evidence: variant.testEvidence?.[index] || test.evidence }))
   };
+}
+
+export function buildExpeditionSequence(state, catalog) {
+  return catalog.map((_, round) => {
+    const index = state.missionOrder?.[round] ?? round;
+    const mission = index === 1 && state.dynamicTargetMission ? state.dynamicTargetMission : (catalog[index] || catalog[0]);
+    return applyVariant(mission, mission.variants?.[state.missionVariants?.[round] || 0]);
+  });
+}
+
+export function missionForRound(state, catalog) {
+  if (state.missionSequence?.length) return state.missionSequence[state.round] || catalog[0];
+  const index = state.missionOrder?.[state.round] ?? state.round;
+  const mission = index === 1 && state.dynamicTargetMission ? state.dynamicTargetMission : (catalog[index] || catalog[0]);
+  return applyVariant(mission, mission.variants?.[state.missionVariants?.[state.round] || 0]);
 }

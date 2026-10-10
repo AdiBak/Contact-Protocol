@@ -185,10 +185,12 @@ export async function prepareScene(root, mission, event) {
   const kind = mission.kind || mission.theme.kind || 'planet';
   const world = addWorld(scene, kind, mission.theme.accent, mission.theme.world, mission.theme.worldRadius, mission.title);
   const ship = addShip(scene, mission.theme.accent);
+  const firstPersonSurvey = Boolean(root.closest('.phase-content-explore'));
   const evidenceReview = Boolean(root.closest('.phase-content-predict'));
   const shipBaseY = evidenceReview ? -1.72 : -2.6;
   ship.position.x = evidenceReview ? 1.45 : 0;
   ship.position.y = shipBaseY;
+  ship.visible = !firstPersonSurvey;
   const instrument = addInstrument(scene, kind, mission.theme.accent);
   const particles = new THREE.Group(); scene.add(particles);
   const cueColor = color(mission.theme.accent, '#7ee7df');

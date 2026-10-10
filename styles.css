@@ -592,3 +592,41 @@ body.mission-mode .finding-panel.is-exiting{pointer-events:none;animation:findin
  body.mission-mode .game-main.crew-compact{grid-template-rows:30px 44px minmax(0,1fr)}
  body.mission-mode .crew-compact .crew-bar{min-height:44px}
 }
+
+/* First-person survey framing keeps the world interactive while suggesting a real cockpit. */
+body.mission-mode .cockpit-overlay{display:none;position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none}
+body.mission-mode .phase-content-explore .cockpit-overlay{display:block}
+body.mission-mode .cockpit-overlay:before{content:'';position:absolute;inset:0;border:8px solid #111a26b8;border-top-width:5px;border-radius:8px;box-shadow:inset 0 0 28px #0009}
+body.mission-mode .cockpit-strut{position:absolute;top:-5%;bottom:46px;width:12px;border:1px solid #52657b55;background:linear-gradient(90deg,#080d13,#263344 48%,#080d13);box-shadow:0 0 18px #000b}
+body.mission-mode .cockpit-strut-left{left:12%;transform:skewX(13deg)}
+body.mission-mode .cockpit-strut-right{right:12%;transform:skewX(-13deg)}
+body.mission-mode .cockpit-console{position:absolute;left:-2%;right:-2%;bottom:-2px;height:64px;display:flex;align-items:flex-end;justify-content:center;gap:10px;padding-bottom:10px;clip-path:polygon(0 38%,15% 12%,35% 29%,65% 29%,85% 12%,100% 38%,100% 100%,0 100%);border-top:1px solid #71849a77;background:linear-gradient(180deg,#253448e8,#090f18 55%);box-shadow:0 -10px 30px #0009}
+body.mission-mode .cockpit-console span{width:34px;height:9px;border:1px solid #53657b;border-radius:2px;background:#0b1521;box-shadow:inset 0 0 7px #000}
+body.mission-mode .cockpit-console span:nth-child(2),
+body.mission-mode .cockpit-console span:nth-child(4){width:7px;height:7px;border:0;border-radius:50%;background:var(--scene-color);box-shadow:0 0 8px var(--scene-color)}
+body.mission-mode .cockpit-console span:nth-child(3){width:72px;height:14px;border-color:#72869c;background:linear-gradient(90deg,#0b1724 48%,var(--scene-color) 50%,#0b1724 52%)}
+
+@media(min-width:901px){
+ body.mission-mode .phase-content-explore .mission-intro{top:10px;left:10px;width:min(56%,680px);display:grid;grid-template-columns:minmax(190px,.72fr) minmax(300px,1.28fr);grid-template-rows:auto auto;column-gap:16px;align-items:center;padding:9px 12px}
+ body.mission-mode .phase-content-explore .mission-intro .card-kicker{grid-column:1;grid-row:1;margin:0 0 3px;font-size:9px}
+ body.mission-mode .phase-content-explore .mission-intro .mission-title{grid-column:1;grid-row:2;font-size:clamp(22px,2.1vw,30px);margin:0}
+ body.mission-mode .phase-content-explore .mission-intro .mission-brief{grid-column:2;grid-row:1/3;display:block;font-size:12px;line-height:1.45}
+ body.mission-mode .phase-content-explore .mission-intro .source-note{grid-column:2;font-size:9px}
+ body.mission-mode .phase-content-explore .mission-intro .journey-track{display:none}
+ body.mission-mode .phase-content-explore .scene-instruction{top:84px;left:10px;width:min(56%,680px);padding:8px 10px}
+ body.mission-mode .phase-content-explore .scene-instruction strong{font-size:12px}
+ body.mission-mode .phase-content-explore .scene-instruction small{font-size:10px;line-height:1.35}
+ body.mission-mode .phase-content-explore .observation-area{top:138px;left:10px;width:min(38%,450px);height:clamp(84px,14vh,105px)}
+ body.mission-mode .phase-content-explore .observation-head{font-size:9px}
+ body.mission-mode .phase-content-explore .focused-observation,
+ body.mission-mode .phase-content-explore .empty-observation{font-size:10px;line-height:1.35}
+ body.mission-mode .phase-content-explore .focused-observation p{font-size:10px;line-height:1.35}
+ body.mission-mode .phase-content-explore .observation-card strong{font-size:9px}
+ body.mission-mode .phase-content-explore .observation-card small{font-size:8px;line-height:1.35}
+}
+
+@media(max-width:600px){
+ body.mission-mode .cockpit-strut{bottom:34px;width:7px}
+ body.mission-mode .cockpit-console{height:42px;padding-bottom:6px}
+ body.mission-mode .cockpit-console span{transform:scale(.72)}
+}

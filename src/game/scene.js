@@ -18,6 +18,7 @@ export function sceneMarkup(mission, discoveries = [], selectedId = null, lastEv
   return `<div class="scene-wrap" data-scene-root style="--scene-color:${theme.color};--scene-accent:${theme.accent}">
     <canvas class="scene-canvas" aria-label="Interactive 3D mission scene: ${esc(mission.location)}"></canvas>
     <div class="scene-vignette" aria-hidden="true"></div>
+    <div class="cockpit-overlay" aria-hidden="true"><i class="cockpit-strut cockpit-strut-left"></i><i class="cockpit-strut cockpit-strut-right"></i><div class="cockpit-console"><span></span><span></span><span></span><span></span><span></span></div></div>
     <div class="scene-caption"><span class="scene-live-dot"></span> ${esc(mission.location)} <span>·</span> <b data-scene-event>${eventLabel}</b></div>
     ${operation}
     <div class="scene-loader" data-scene-loader><i></i><span>CALIBRATING OPTICS · PREPARING MISSION SCENE</span></div>

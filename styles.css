@@ -83,3 +83,42 @@
 @keyframes eventPanelIn{from{opacity:0;transform:translateY(9px) scale(.98);filter:blur(3px)}to{opacity:1;transform:none;filter:none}}@keyframes traceSignal{to{stroke-dashoffset:0}}@keyframes plotSweep{0%{transform:translateX(0);opacity:0}10%{opacity:.9}90%{opacity:.9}100%{transform:translateX(300px);opacity:0}}@keyframes reticlePulse{to{transform:scale(1.8);opacity:.4}}@keyframes readingArrive{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}@keyframes statusBlink{50%{opacity:.45}}@keyframes orbitSettle{from{opacity:0;transform:scale(.55) rotate(-40deg)}to{opacity:1;transform:scale(1) rotate(0)}}@keyframes orbitDot{to{transform:rotate(360deg) translateX(20px)}}
 @media(max-width:600px){.scene-event-panel,.finding-panel{left:8px;right:8px;bottom:8px;width:auto;max-width:330px;padding:8px 9px}.finding-panel{left:auto;width:68%}.scene-event-panel .mission-reading small{font-size:7px}.scene-event-panel .scan-visual{height:44px;margin:5px 0}.scene-event-panel .finding-visual{padding:6px 0}.finding-orbit{width:38px;height:38px}.finding-orbit i{width:3px;height:3px}.finding-panel .result-reading{padding-top:5px}.finding-panel .finding-visual strong{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.scene-event-panel,.scene-event-panel *{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
+
+/* Mission control becomes a viewport-sized cockpit once the crew is in a room. */
+body.mission-mode{height:100dvh;overflow:hidden}
+body.mission-mode .shell{display:flex;flex-direction:column;width:100%;height:100dvh;max-width:none;margin:0;padding:8px 12px 10px;gap:8px;overflow:hidden}
+body.mission-mode .topbar{flex:none;height:34px;margin:0}
+body.mission-mode .top-status{display:none}
+body.mission-mode .footer{display:none}
+body.mission-mode #gameView{flex:1;min-height:0;overflow:hidden}
+body.mission-mode .game-layout{height:100%;grid-template-columns:minmax(0,1fr) 245px;gap:11px;align-items:stretch}
+body.mission-mode .game-main{height:100%;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:13px 17px;scrollbar-width:thin;scrollbar-color:#35465b transparent}
+body.mission-mode .sidebar{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+body.mission-mode .sidebar-card{padding:13px;margin-bottom:9px}
+body.mission-mode .room-head{margin-bottom:12px}
+body.mission-mode .room-head-tools{display:flex;align-items:center;gap:12px}
+body.mission-mode .fullscreen-toggle{width:31px;height:31px;display:grid;place-items:center;border:1px solid #3c5068;border-radius:7px;background:#101b2b;color:#c3d2df;font-size:18px;line-height:1;transition:border-color .15s,color .15s,background .15s}
+body.mission-mode .fullscreen-toggle:hover{border-color:var(--cyan);color:var(--cyan);background:#122332}
+body.mission-mode .mission-title{margin:7px 0 5px;font-size:clamp(22px,2.5vw,32px)}
+body.mission-mode .mission-brief{margin:0 0 8px;font-size:12px;line-height:1.45}
+body.mission-mode .journey-track{margin:8px 0 12px;padding-top:0}
+body.mission-mode .journey-stop{gap:3px}
+body.mission-mode .journey-node{width:21px;height:21px}
+body.mission-mode .scene-instruction{margin:8px 0;padding:8px 10px}
+body.mission-mode .scene-wrap{height:clamp(190px,34vh,340px);min-height:0;aspect-ratio:auto}
+body.mission-mode .observation-area{margin-top:10px}
+body.mission-mode .observation-list{display:flex;gap:7px;overflow-x:auto;padding-bottom:3px}
+body.mission-mode .observation-card{flex:0 0 min(250px,42%)}
+body.mission-mode .choice-grid{gap:7px;margin-top:10px}
+body.mission-mode .choice{min-height:83px;padding:9px}
+body.mission-mode .choice small{font-size:9px}
+body.mission-mode .submit-row{margin-top:10px;padding-bottom:3px}
+body.mission-mode .decision-guide{margin:8px 0;padding:8px 10px;font-size:10px}
+body.mission-mode .energy-panel{padding:9px 11px;margin:8px 0}
+body.mission-mode .evidence-strip{display:flex;overflow-x:auto;gap:7px;margin:8px 0;padding-bottom:3px}
+body.mission-mode .evidence-strip>*{flex:0 0 min(280px,45%);margin:0}
+.finding-panel.is-exiting{animation:findingPanelOut .8s ease var(--exit-delay,0ms) both}
+@keyframes findingPanelOut{to{opacity:0;transform:translateY(-10px) scale(.97);filter:blur(3px)}}
+@media(max-width:760px){body.mission-mode .shell{padding:6px 7px 7px;gap:5px}body.mission-mode .topbar{height:27px}body.mission-mode .game-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:5px}body.mission-mode .game-main{padding:10px 11px}body.mission-mode .sidebar{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;min-height:40px;max-height:50px}body.mission-mode .sidebar-card:first-child{display:flex;align-items:center;gap:9px;flex:1;min-width:max-content;padding:5px 8px;margin:0}body.mission-mode .sidebar-card:first-child .roster-title{margin:0;white-space:nowrap}body.mission-mode .sidebar-card:first-child .player-row{flex:none;padding:0;border:0;white-space:nowrap;font-size:9px}body.mission-mode .sidebar-card:first-child .avatar{width:20px;height:20px}body.mission-mode .sidebar-card:first-child .progress,body.mission-mode .sidebar-card:first-child .sidebar-note,body.mission-mode .sidebar-card:first-child .copy-code,body.mission-mode .mission-brief-card{display:none}body.mission-mode .scene-wrap{height:clamp(175px,29vh,245px)}body.mission-mode .choice-grid{grid-template-columns:repeat(3,minmax(0,1fr))}body.mission-mode .choice{display:flex;min-height:91px;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:3px;padding:7px}body.mission-mode .choice .choice-icon{font-size:14px;margin:0}body.mission-mode .choice strong{font-size:10px;line-height:1.2}body.mission-mode .choice small{font-size:8px;line-height:1.3}body.mission-mode .scan-cost{font-size:7px}body.mission-mode .observation-list{margin-top:6px}body.mission-mode .observation-card{flex-basis:min(240px,76%)}body.mission-mode .evidence-strip>*{flex-basis:min(250px,78%)}body.mission-mode .room-head{margin-bottom:8px}body.mission-mode .mission-brief{font-size:11px;line-height:1.4}body.mission-mode .journey-track{margin:7px 0 9px}body.mission-mode .journey-name{font-size:7px}}
+@media(max-height:720px){body.mission-mode .scene-wrap{height:clamp(155px,28vh,220px)}body.mission-mode .game-main{padding-top:9px;padding-bottom:9px}body.mission-mode .journey-track{margin:5px 0 7px}body.mission-mode .scene-instruction{margin:5px 0;padding:6px 8px}body.mission-mode .observation-area{margin-top:7px}}
+@media(prefers-reduced-motion:reduce){.finding-panel.is-exiting{animation-duration:.01ms}}

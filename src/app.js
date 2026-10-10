@@ -68,6 +68,7 @@ import { esc } from './game/text.js';
   function showGame() {
     home.classList.add('hidden');
     game.classList.remove('hidden');
+    document.body.classList.add('mission-mode');
     render();
   }
 
@@ -183,7 +184,9 @@ import { esc } from './game/text.js';
       state.round += 1;
       resetMissionPlayers();
       state.phase = 'explore';
+      if (state.lastEvent?.kind === 'finding') state.lastEvent = { ...state.lastEvent, kind: 'findingExit', startedAt: Date.now() };
     }
+    if (state.phase === 'finished') state.lastEvent = null;
     state.lastResult = null;
     broadcast();
   }
@@ -194,6 +197,7 @@ import { esc } from './game/text.js';
     state.phase = 'lobby';
     state.teamScore = 0;
     state.lastResult = null;
+    state.lastEvent = null;
     state.journeyLog = [];
     state.missionVariants = null;
     state.missionSequence = null;
@@ -307,6 +311,7 @@ import { esc } from './game/text.js';
           peer.destroy();
           home.classList.remove('hidden');
           game.classList.add('hidden');
+          document.body.classList.remove('mission-mode');
         }
       });
       conn.on('error', () => {
@@ -417,7 +422,7 @@ import { esc } from './game/text.js';
     }).join('');
     const missionProgress = state.phase === 'lobby' ? 0 : state.phase === 'finished' ? 100 : ((state.round + (state.phase === 'reveal' ? 1 : 0)) / missions.length) * 100;
     const sideNote = state.phase === 'lobby' ? 'Invite 1–7 friends with the room code.' : `Shared research: ${state.teamScore} RP · ${RESEARCH_BUDGET} energy each mission`;
-    game.innerHTML = `<div class="game-layout"><main class="game-main phase-${state.phase}"><div class="room-head"><div><div class="card-kicker">MISSION ROOM</div><div class="room-id">${esc(room || state.room)}</div></div><div class="round-meta"><span class="phase-pill">${pill}</span><br/>${state.phase === 'lobby' ? 'READY WHEN YOU ARE' : state.phase === 'finished' ? 'FIELD REPORT COMPLETE' : `MISSION ${String(state.round + 1).padStart(2, '0')} OF 05`}</div></div>${content}</main><aside class="sidebar"><div class="sidebar-card"><div class="roster-title"><span>Research crew</span><span>${active.length}/8</span></div>${roster}<div class="progress"><span style="width:${missionProgress}%"></span></div><div class="sidebar-note">${sideNote}</div>${isHost && state.phase === 'lobby' ? '<button id="copyCode" class="copy-code">COPY ROOM CODE ↗</button>' : ''}</div><div class="sidebar-card mission-brief-card"><div class="card-kicker">FIELD NOTES</div><div class="sidebar-note">A discovery is a clue, not a verdict. Spend energy on evidence that can distinguish between competing explanations.</div><div class="crew-scoreline compact"><span>EXPEDITION SCORE</span><strong>${state.teamScore} RP</strong></div></div></aside></div>`;
+    game.innerHTML = `<div class="game-layout"><main class="game-main phase-${state.phase}"><div class="room-head"><div><div class="card-kicker">MISSION ROOM</div><div class="room-id">${esc(room || state.room)}</div></div><div class="room-head-tools"><button type="button" id="fullscreenBtn" class="fullscreen-toggle" aria-label="Enter fullscreen" title="Toggle fullscreen">⛶</button><div class="round-meta"><span class="phase-pill">${pill}</span><br/>${state.phase === 'lobby' ? 'READY WHEN YOU ARE' : state.phase === 'finished' ? 'FIELD REPORT COMPLETE' : `MISSION ${String(state.round + 1).padStart(2, '0')} OF 05`}</div></div></div>${content}</main><aside class="sidebar"><div class="sidebar-card"><div class="roster-title"><span>Research crew</span><span>${active.length}/8</span></div>${roster}<div class="progress"><span style="width:${missionProgress}%"></span></div><div class="sidebar-note">${sideNote}</div>${isHost && state.phase === 'lobby' ? '<button id="copyCode" class="copy-code">COPY ROOM CODE ↗</button>' : ''}</div><div class="sidebar-card mission-brief-card"><div class="card-kicker">FIELD NOTES</div><div class="sidebar-note">A discovery is a clue, not a verdict. Spend energy on evidence that can distinguish between competing explanations.</div><div class="crew-scoreline compact"><span>EXPEDITION SCORE</span><strong>${state.teamScore} RP</strong></div></div></aside></div>`;
 
     $('#startBtn')?.addEventListener('click', startMission);
     $('#copyCode')?.addEventListener('click', copyRoom);
@@ -439,6 +444,18 @@ import { esc } from './game/text.js';
     $('#nextBtn')?.addEventListener('click', nextRound);
     $('#restartBtn')?.addEventListener('click', restartMission);
     $('#leaveBtn')?.addEventListener('click', () => { peer?.destroy(); location.reload(); });
+    $('#fullscreenBtn')?.addEventListener('click', async () => {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await document.documentElement.requestFullscreen();
+      } catch { toast('Fullscreen is unavailable in this browser.'); }
+    });
+    $('#fullscreenBtn')?.addEventListener('click', async () => {
+      try {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else await document.documentElement.requestFullscreen();
+      } catch { toast('Fullscreen is unavailable in this browser.'); }
+    });
     game.querySelectorAll('[data-hotspot]').forEach((button) => button.addEventListener('click', () => {
       localHotspot = button.dataset.hotspot;
       if (!state.discoveries.includes(localHotspot)) sendAction('inspect', localHotspot);

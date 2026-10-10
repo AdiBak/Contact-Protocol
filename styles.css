@@ -84,41 +84,294 @@
 @media(max-width:600px){.scene-event-panel,.finding-panel{left:8px;right:8px;bottom:8px;width:auto;max-width:330px;padding:8px 9px}.finding-panel{left:auto;width:68%}.scene-event-panel .mission-reading small{font-size:7px}.scene-event-panel .scan-visual{height:44px;margin:5px 0}.scene-event-panel .finding-visual{padding:6px 0}.finding-orbit{width:38px;height:38px}.finding-orbit i{width:3px;height:3px}.finding-panel .result-reading{padding-top:5px}.finding-panel .finding-visual strong{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.scene-event-panel,.scene-event-panel *{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
 
-/* Mission control becomes a viewport-sized cockpit once the crew is in a room. */
-body.mission-mode{height:100dvh;overflow:hidden}
-body.mission-mode .shell{display:flex;flex-direction:column;width:100%;height:100dvh;max-width:none;margin:0;padding:8px 12px 10px;gap:8px;overflow:hidden}
-body.mission-mode .topbar{flex:none;height:34px;margin:0}
-body.mission-mode .top-status{display:none}
-body.mission-mode .footer{display:none}
+/* Fixed mission cockpit: the only gameplay canvas is the scene itself. */
+html:has(body.mission-mode),body.mission-mode{width:100%;height:100%;min-height:0;overflow:hidden}
+body.mission-mode{height:100vh;height:100dvh;overscroll-behavior:none}
+body.mission-mode .shell{position:fixed;inset:0;display:flex;flex-direction:column;width:100%;height:100vh;height:100dvh;max-width:none;margin:0;padding:7px 12px 10px;gap:5px;overflow:hidden}
+body.mission-mode .topbar{flex:none;height:30px;min-height:30px;margin:0}
+body.mission-mode .brand{font-size:12px}
+body.mission-mode .brand-mark{width:23px;height:23px}
+body.mission-mode .top-status,body.mission-mode .footer{display:none}
 body.mission-mode #gameView{flex:1;min-height:0;overflow:hidden}
-body.mission-mode .game-layout{height:100%;grid-template-columns:minmax(0,1fr) 245px;gap:11px;align-items:stretch}
-body.mission-mode .game-main{height:100%;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:13px 17px;scrollbar-width:thin;scrollbar-color:#35465b transparent}
-body.mission-mode .sidebar{min-height:0;overflow-y:auto;overscroll-behavior:contain}
-body.mission-mode .sidebar-card{padding:13px;margin-bottom:9px}
-body.mission-mode .room-head{margin-bottom:12px}
-body.mission-mode .room-head-tools{display:flex;align-items:center;gap:12px}
-body.mission-mode .fullscreen-toggle{width:31px;height:31px;display:grid;place-items:center;border:1px solid #3c5068;border-radius:7px;background:#101b2b;color:#c3d2df;font-size:18px;line-height:1;transition:border-color .15s,color .15s,background .15s}
-body.mission-mode .fullscreen-toggle:hover{border-color:var(--cyan);color:var(--cyan);background:#122332}
-body.mission-mode .mission-title{margin:7px 0 5px;font-size:clamp(22px,2.5vw,32px)}
-body.mission-mode .mission-brief{margin:0 0 8px;font-size:12px;line-height:1.45}
-body.mission-mode .journey-track{margin:8px 0 12px;padding-top:0}
+body.mission-mode .game-layout{display:block;width:100%;height:100%;overflow:hidden}
+body.mission-mode .game-main{display:grid;grid-template-rows:34px 54px minmax(0,1fr);gap:5px;width:100%;height:100%;min-height:0;overflow:hidden;padding:0;border:0;border-radius:0;background:transparent}
+body.mission-mode .room-head{min-width:0;height:34px;min-height:34px;margin:0;padding:0 3px;z-index:5}
+body.mission-mode .room-identity{display:flex;align-items:center;gap:10px}
+body.mission-mode .room-eyebrow{font:8px var(--mono);letter-spacing:.12em;color:var(--muted)}
+body.mission-mode .room-id{font-size:14px}
+body.mission-mode .room-head-tools{display:flex;align-items:center;gap:10px}
+body.mission-mode .round-meta{font-size:8px;line-height:1.45}
+body.mission-mode .round-meta .phase-pill{padding:3px 7px;font-size:8px}
+body.mission-mode .fullscreen-toggle{width:28px;height:28px;display:grid;place-items:center;border:1px solid #3c5068;border-radius:7px;background:#101b2b;color:#d8e4ee}
+body.mission-mode .crew-bar{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(170px,.65fr) minmax(180px,.7fr);align-items:center;gap:10px;min-width:0;min-height:54px;padding:5px 10px;border:1px solid #b2c8dc30;border-radius:9px;background:#091422d9;box-shadow:0 6px 20px #0004;backdrop-filter:blur(10px);z-index:5}
+body.mission-mode .crew-roster{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden}
+body.mission-mode .crew-label{flex:none;font:8px var(--mono);letter-spacing:.1em;color:var(--cyan)}
+body.mission-mode .player-row{display:flex;align-items:center;gap:5px;min-width:0;padding:0;border:0;font-size:9px;white-space:nowrap}
+body.mission-mode .avatar{width:21px;height:21px;flex:none;border-radius:6px;font-size:8px}
+body.mission-mode .player-name{max-width:96px;overflow:hidden;text-overflow:ellipsis}
+body.mission-mode .host-tag,body.mission-mode .player-state{font-size:7px}
+body.mission-mode .crew-metrics{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:3px 7px;min-width:0;padding:0 10px;border-left:1px solid #8293a833}
+body.mission-mode .crew-score{font:9px var(--mono);color:var(--amber);white-space:nowrap}
+body.mission-mode .crew-note{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8px;color:#bdc8d4}
+body.mission-mode .crew-progress{grid-column:1/-1;display:block;height:3px;overflow:hidden;border-radius:5px;background:#27364a}
+body.mission-mode .crew-progress b{display:block;height:100%;background:var(--cyan);transition:width .3s}
+body.mission-mode .copy-code{margin:0;padding:4px 6px;font-size:7px}
+body.mission-mode .crew-field-note{display:flex;align-items:center;gap:7px;min-width:0;padding-left:10px;border-left:1px solid #8293a833;font-size:8px;line-height:1.25;color:#aab7c6}
+body.mission-mode .crew-field-note b{flex:none;font:7px var(--mono);letter-spacing:.1em;color:var(--cyan)}
+body.mission-mode .crew-field-note span{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+body.mission-mode .phase-content{position:relative;min-width:0;min-height:0;width:100%;height:100%;overflow:hidden;isolation:isolate}
+body.mission-mode .scene-stage{position:absolute;inset:0;z-index:-1;width:100%;height:100%;border:0;pointer-events:none}
+body.mission-mode .scene-stage .scene-wrap{position:absolute;inset:0;width:100%;height:100%;min-height:0;aspect-ratio:auto;border:0;border-radius:8px;background:#050a12}
+body.mission-mode .scene-stage .scene-art,body.mission-mode .scene-stage canvas{width:100%;height:100%}
+body.mission-mode .scene-stage .hotspot{pointer-events:auto}
+body.mission-mode .mission-intro,body.mission-mode .scene-instruction,body.mission-mode .observation-area,body.mission-mode .decision-guide,body.mission-mode .energy-panel,body.mission-mode .scan-evidence-area,body.mission-mode .vote-tally,body.mission-mode .evidence-strip,body.mission-mode .answer-area,body.mission-mode .debrief-panel,body.mission-mode .report-overview,body.mission-mode .final-report,body.mission-mode .lobby-preview,body.mission-mode .phase-content>.submit-row{position:absolute;z-index:2;min-width:0;margin:0;padding:10px 12px;border:1px solid #b2c8dc36;border-radius:9px;background:linear-gradient(135deg,#091422ed,#101b2bed);box-shadow:0 10px 30px #0006;backdrop-filter:blur(10px)}
+body.mission-mode .mission-intro{top:12px;left:12px;width:min(38%,430px);padding:10px 12px}
+body.mission-mode .mission-intro .card-kicker{font-size:8px;margin-bottom:4px}
+body.mission-mode .mission-title{font-size:clamp(20px,2.2vw,29px);margin:3px 0 5px}
+body.mission-mode .mission-brief{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:3;font-size:11px;line-height:1.4}
+body.mission-mode .mission-intro .source-note{font-size:8px}
+body.mission-mode .mission-intro .journey-track{margin:7px 0 0}
 body.mission-mode .journey-stop{gap:3px}
-body.mission-mode .journey-node{width:21px;height:21px}
-body.mission-mode .scene-instruction{margin:8px 0;padding:8px 10px}
-body.mission-mode .scene-wrap{height:clamp(190px,34vh,340px);min-height:0;aspect-ratio:auto}
-body.mission-mode .observation-area{margin-top:10px}
-body.mission-mode .observation-list{display:flex;gap:7px;overflow-x:auto;padding-bottom:3px}
-body.mission-mode .observation-card{flex:0 0 min(250px,42%)}
-body.mission-mode .choice-grid{gap:7px;margin-top:10px}
-body.mission-mode .choice{min-height:83px;padding:9px}
-body.mission-mode .choice small{font-size:9px}
-body.mission-mode .submit-row{margin-top:10px;padding-bottom:3px}
-body.mission-mode .decision-guide{margin:8px 0;padding:8px 10px;font-size:10px}
-body.mission-mode .energy-panel{padding:9px 11px;margin:8px 0}
-body.mission-mode .evidence-strip{display:flex;overflow-x:auto;gap:7px;margin:8px 0;padding-bottom:3px}
-body.mission-mode .evidence-strip>*{flex:0 0 min(280px,45%);margin:0}
-.finding-panel.is-exiting{animation:findingPanelOut .8s ease var(--exit-delay,0ms) both}
-@keyframes findingPanelOut{to{opacity:0;transform:translateY(-10px) scale(.97);filter:blur(3px)}}
-@media(max-width:760px){body.mission-mode .shell{padding:6px 7px 7px;gap:5px}body.mission-mode .topbar{height:27px}body.mission-mode .game-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:5px}body.mission-mode .game-main{padding:10px 11px}body.mission-mode .sidebar{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;min-height:40px;max-height:50px}body.mission-mode .sidebar-card:first-child{display:flex;align-items:center;gap:9px;flex:1;min-width:max-content;padding:5px 8px;margin:0}body.mission-mode .sidebar-card:first-child .roster-title{margin:0;white-space:nowrap}body.mission-mode .sidebar-card:first-child .player-row{flex:none;padding:0;border:0;white-space:nowrap;font-size:9px}body.mission-mode .sidebar-card:first-child .avatar{width:20px;height:20px}body.mission-mode .sidebar-card:first-child .progress,body.mission-mode .sidebar-card:first-child .sidebar-note,body.mission-mode .sidebar-card:first-child .copy-code,body.mission-mode .mission-brief-card{display:none}body.mission-mode .scene-wrap{height:clamp(175px,29vh,245px)}body.mission-mode .choice-grid{grid-template-columns:repeat(3,minmax(0,1fr))}body.mission-mode .choice{display:flex;min-height:91px;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:3px;padding:7px}body.mission-mode .choice .choice-icon{font-size:14px;margin:0}body.mission-mode .choice strong{font-size:10px;line-height:1.2}body.mission-mode .choice small{font-size:8px;line-height:1.3}body.mission-mode .scan-cost{font-size:7px}body.mission-mode .observation-list{margin-top:6px}body.mission-mode .observation-card{flex-basis:min(240px,76%)}body.mission-mode .evidence-strip>*{flex-basis:min(250px,78%)}body.mission-mode .room-head{margin-bottom:8px}body.mission-mode .mission-brief{font-size:11px;line-height:1.4}body.mission-mode .journey-track{margin:7px 0 9px}body.mission-mode .journey-name{font-size:7px}}
-@media(max-height:720px){body.mission-mode .scene-wrap{height:clamp(155px,28vh,220px)}body.mission-mode .game-main{padding-top:9px;padding-bottom:9px}body.mission-mode .journey-track{margin:5px 0 7px}body.mission-mode .scene-instruction{margin:5px 0;padding:6px 8px}body.mission-mode .observation-area{margin-top:7px}}
-@media(prefers-reduced-motion:reduce){.finding-panel.is-exiting{animation-duration:.01ms}}
+body.mission-mode .journey-node{width:18px;height:18px;font-size:8px}
+body.mission-mode .journey-name{font-size:7px}
+body.mission-mode .scene-instruction{top:146px;left:12px;width:min(38%,430px);padding:8px 10px}
+body.mission-mode .scene-instruction .instruction-orb{width:24px;height:24px}
+body.mission-mode .scene-instruction strong{font-size:11px}
+body.mission-mode .scene-instruction small{font-size:9px;line-height:1.35}
+body.mission-mode .scene-counter{font:8px var(--mono);color:var(--cyan)}
+body.mission-mode .observation-area{left:12px;bottom:12px;width:min(57%,730px);height:clamp(120px,20vh,168px);padding:8px;display:grid;grid-template-rows:auto auto minmax(0,1fr);gap:5px}
+body.mission-mode .observation-head{font-size:8px}
+body.mission-mode .focused-observation,body.mission-mode .empty-observation{padding:6px 8px;font-size:9px;line-height:1.3}
+body.mission-mode .focused-kicker{font-size:8px}
+body.mission-mode .focused-observation p{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;margin:3px 0 0;font-size:9px}
+body.mission-mode .observation-list{display:flex;gap:5px;min-height:0;overflow:hidden}
+body.mission-mode .observation-card{flex:1 1 0;min-width:0;padding:5px;gap:5px}
+body.mission-mode .observation-card strong{font-size:8px}
+body.mission-mode .observation-card small{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:7px}
+body.mission-mode .phase-content>.submit-row{right:12px;bottom:12px;width:max-content;max-width:38%;padding:7px 9px;gap:8px}
+body.mission-mode .submit-row .btn{height:34px;min-height:34px;padding:0 12px;font-size:10px;white-space:nowrap}
+body.mission-mode .hint{font-size:8px;line-height:1.3}
+body.mission-mode .phase-content-explore .scene-event-panel{right:12px;bottom:12px;width:min(34%,390px);max-width:390px;z-index:3}
+body.mission-mode .decision-guide{top:126px;left:12px;width:min(41%,490px);padding:8px 10px;font-size:9px;line-height:1.35}
+body.mission-mode .decision-guide strong{display:block;margin-bottom:3px;font:8px var(--mono);letter-spacing:.1em;color:var(--cyan)}
+body.mission-mode .phase-content-investigate .mission-intro,body.mission-mode .phase-content-predict .mission-intro{width:min(40%,490px)}
+body.mission-mode .phase-content-investigate .decision-guide,body.mission-mode .phase-content-predict .decision-guide{top:130px}
+body.mission-mode .energy-panel{top:12px;right:12px;width:220px;padding:8px 10px;margin:0}
+body.mission-mode .energy-panel .panel-label{font-size:8px}
+body.mission-mode .energy-panel strong{font-size:10px}
+body.mission-mode .energy-panel small{font-size:8px}
+body.mission-mode .energy-cell{width:15px;height:8px}
+body.mission-mode .scan-evidence-area{top:202px;left:12px;width:min(41%,490px);height:clamp(82px,14vh,118px);padding:6px;overflow:hidden}
+body.mission-mode .scan-evidence-area>.evidence-strip{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;padding:0;border:0;background:transparent;box-shadow:none;backdrop-filter:none}
+body.mission-mode .scan-evidence-area .evidence{padding:5px;font-size:8px;line-height:1.25}
+body.mission-mode .scan-evidence-area .evidence .tag{font-size:7px;margin-bottom:2px}
+body.mission-mode .scan-evidence-area .empty-observation{font-size:9px}
+body.mission-mode .phase-content-investigate .choice-grid{position:absolute;z-index:2;left:12px;bottom:58px;width:min(72%,930px);height:clamp(95px,16vh,132px);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0;padding:6px;border:1px solid #b2c8dc36;border-radius:9px;background:#091422df;box-shadow:0 10px 30px #0006;backdrop-filter:blur(10px)}
+body.mission-mode .choice{min-height:0;height:100%;padding:8px;text-align:left}
+body.mission-mode .choice .choice-icon{font-size:15px;margin:0 0 3px}
+body.mission-mode .choice strong{font-size:10px;line-height:1.15}
+body.mission-mode .choice small{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:8px;line-height:1.25}
+body.mission-mode .scan-choice{padding:20px 7px 6px}
+body.mission-mode .scan-choice .choice-icon{top:5px;left:7px}
+body.mission-mode .scan-cost{top:6px;right:6px;font-size:7px}
+body.mission-mode .phase-content-investigate>.submit-row,body.mission-mode .phase-content-predict>.submit-row{right:12px;bottom:12px}
+body.mission-mode .phase-content-investigate .scan-panel,body.mission-mode .phase-content-predict .scan-panel{left:auto;right:12px;bottom:12px;width:min(32%,390px);z-index:3}
+body.mission-mode .phase-content-predict .vote-tally{top:12px;right:12px;width:230px;padding:7px}
+body.mission-mode .vote-tally-title{font-size:8px}
+body.mission-mode .vote-tally-row{font-size:9px}
+body.mission-mode .phase-content-predict>.evidence-strip{top:190px;left:12px;width:min(43%,520px);max-height:clamp(92px,16vh,128px);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:6px;overflow:hidden}
+body.mission-mode .phase-content-predict>.evidence-strip .evidence{padding:6px;font-size:8px;line-height:1.25}
+body.mission-mode .phase-content-predict>.evidence-strip .evidence .tag{font-size:7px}
+body.mission-mode .answer-area{left:12px;bottom:12px;width:min(70%,900px);height:clamp(126px,20vh,160px);display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:5px;padding:7px}
+body.mission-mode .answer-area>.phase-pill{position:static;justify-self:start;padding:0;border:0;background:transparent;font-size:8px}
+body.mission-mode .answer-area>.choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;min-height:0;margin:0}
+body.mission-mode .answer-area .choice{padding:6px}
+body.mission-mode .confidence-row{display:flex;align-items:center;gap:8px;margin:0}
+body.mission-mode .confidence-row .field-label{margin:0;font-size:7px}
+body.mission-mode .confidence-options{display:flex;gap:4px}
+body.mission-mode .confidence{min-width:0;padding:4px 7px;gap:4px}
+body.mission-mode .confidence b{font-size:9px}
+body.mission-mode .confidence span{font-size:8px}
+body.mission-mode .phase-content-reveal .mission-intro{left:auto;right:12px;width:min(41%,510px)}
+body.mission-mode .phase-content-reveal .debrief-panel{right:12px;bottom:58px;width:min(44%,560px);max-height:calc(100% - 190px);display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:6px;padding:9px;overflow:hidden}
+body.mission-mode .phase-content-reveal .debrief-panel>.finding-banner,body.mission-mode .phase-content-reveal .debrief-panel>.result-box,body.mission-mode .phase-content-reveal .debrief-panel>.score-breakdown{position:static;min-height:0;margin:0}
+body.mission-mode .phase-content-reveal .debrief-panel>.result-box{overflow:hidden;background:transparent;padding:3px}
+body.mission-mode .phase-content-reveal .debrief-panel>.result-box p{font-size:10px;line-height:1.35}
+body.mission-mode .phase-content-reveal .debrief-panel>.result-box .answer-votes{display:flex;flex-wrap:wrap;gap:4px;margin:5px 0}
+body.mission-mode .phase-content-reveal .debrief-panel>.result-box .answer-votes span{font-size:8px;padding:3px 5px}
+body.mission-mode .phase-content-reveal .debrief-panel>.result-box .result-score{font-size:8px}
+body.mission-mode .phase-content-reveal .debrief-panel>.score-breakdown{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+body.mission-mode .phase-content-reveal .score-breakdown>div{padding:5px}
+body.mission-mode .phase-content-reveal .score-breakdown span{font-size:7px}
+body.mission-mode .phase-content-reveal .score-breakdown b{font-size:8px}
+body.mission-mode .phase-content-reveal .debrief-panel>.journey-track,body.mission-mode .phase-content-reveal .debrief-panel>.evidence-strip,body.mission-mode .phase-content-reveal .debrief-panel>.crew-scoreline{display:none}
+body.mission-mode .phase-content-reveal>.submit-row{right:auto;left:12px;bottom:12px;width:max-content;max-width:45%}
+body.mission-mode .phase-content-reveal .finding-panel{left:12px;right:auto;bottom:58px;width:min(40%,460px)}
+body.mission-mode .phase-content-finished .report-overview{top:12px;left:12px;width:30%;padding:11px}
+body.mission-mode .phase-content-finished .report-overview .mission-brief{display:-webkit-box}
+body.mission-mode .phase-content-finished .final-report{top:12px;right:12px;bottom:56px;width:66%;padding:10px;overflow:hidden}
+body.mission-mode .phase-content-finished .final-report>p{font-size:9px;margin:3px 0}
+body.mission-mode .phase-content-finished .report-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:5px}
+body.mission-mode .phase-content-finished .report-entry{min-width:0;padding:6px;gap:5px}
+body.mission-mode .phase-content-finished .report-entry small{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:8px}
+body.mission-mode .phase-content-finished>.submit-row{left:12px;right:12px;bottom:8px;width:auto;max-width:none;justify-content:center}
+body.mission-mode .phase-content-lobby{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:18px;text-align:center}
+body.mission-mode .phase-content-lobby>.card-kicker,body.mission-mode .phase-content-lobby>.mission-title,body.mission-mode .phase-content-lobby>.mission-brief,body.mission-mode .phase-content-lobby>.journey-track,body.mission-mode .phase-content-lobby>.lobby-preview,body.mission-mode .phase-content-lobby>.submit-row{position:static;width:min(100%,760px);max-width:760px;margin:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none}
+body.mission-mode .phase-content-lobby>.mission-title{font-size:clamp(30px,5vw,56px)}
+body.mission-mode .phase-content-lobby>.mission-brief{font-size:clamp(12px,1.4vw,16px)}
+body.mission-mode .phase-content-lobby>.journey-track{margin:10px 0}
+body.mission-mode .phase-content-lobby>.lobby-preview{display:flex;justify-content:center;gap:10px;font:9px var(--mono);color:var(--muted)}
+body.mission-mode .phase-content-lobby>.submit-row{position:relative;display:flex;justify-content:center}
+
+@media(max-width:900px){
+ body.mission-mode .crew-bar{grid-template-columns:minmax(0,1fr) minmax(145px,.65fr);grid-template-rows:auto auto;gap:4px 8px;padding:5px 7px}
+ body.mission-mode .crew-roster{grid-column:1/-1;grid-row:1;gap:6px}
+ body.mission-mode .crew-metrics{grid-column:1;grid-row:2;border-left:0;padding:0}
+ body.mission-mode .crew-field-note{grid-column:2;grid-row:2;padding-left:7px}
+ body.mission-mode .player-row{flex:0 0 auto}
+ body.mission-mode .player-name,body.mission-mode .host-tag,body.mission-mode .player-state{display:none}
+}
+@media(max-width:600px){
+ body.mission-mode .shell{padding:4px 5px 5px;gap:3px}
+ body.mission-mode .topbar{height:25px;min-height:25px}
+ body.mission-mode .brand{gap:6px;font-size:10px}
+ body.mission-mode .brand-mark{width:19px;height:19px;font-size:12px}
+ body.mission-mode .game-main{grid-template-rows:30px 62px minmax(0,1fr);gap:3px}
+ body.mission-mode .room-head{height:30px;min-height:30px}
+ body.mission-mode .room-eyebrow{font-size:6px}
+ body.mission-mode .room-id{font-size:11px;letter-spacing:.12em}
+ body.mission-mode .room-head-tools{gap:5px}
+ body.mission-mode .round-meta{font-size:6px}
+ body.mission-mode .round-meta .phase-pill{font-size:6px;padding:2px 4px}
+ body.mission-mode .fullscreen-toggle{width:24px;height:24px}
+ body.mission-mode .crew-bar{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:27px 1fr;gap:3px 5px;min-height:62px;padding:4px 5px}
+ body.mission-mode .crew-roster{grid-column:1/-1;grid-row:1;gap:6px;overflow:hidden}
+ body.mission-mode .crew-label{font-size:6px}
+ body.mission-mode .player-row{gap:0}
+ body.mission-mode .player-name,body.mission-mode .host-tag,body.mission-mode .player-state{display:none}
+ body.mission-mode .avatar{width:18px;height:18px;border-radius:50%;font-size:7px}
+ body.mission-mode .crew-metrics{grid-column:1;grid-row:2;grid-template-columns:1fr;gap:1px;padding:0}
+ body.mission-mode .crew-score{font-size:7px}
+ body.mission-mode .crew-note{font-size:7px}
+ body.mission-mode .crew-progress{display:none}
+ body.mission-mode .crew-field-note{grid-column:2;grid-row:2;gap:4px;padding-left:5px;font-size:7px;line-height:1.1}
+ body.mission-mode .crew-field-note b{font-size:6px}
+ body.mission-mode .crew-field-note span{-webkit-line-clamp:2}
+ body.mission-mode .mission-intro{top:5px;left:5px;width:58%;padding:6px 7px}
+ body.mission-mode .mission-intro .card-kicker{font-size:6px}
+ body.mission-mode .mission-title{font-size:clamp(15px,4vw,20px);margin:2px 0 3px}
+ body.mission-mode .mission-brief{font-size:8px;line-height:1.2;-webkit-line-clamp:2}
+ body.mission-mode .mission-intro .journey-track{display:none}
+ body.mission-mode .scene-instruction{top:96px;left:5px;width:58%;padding:5px}
+ body.mission-mode .scene-instruction .instruction-orb{width:17px;height:17px}
+ body.mission-mode .scene-instruction strong{font-size:8px}
+ body.mission-mode .scene-instruction small{font-size:7px;line-height:1.15}
+ body.mission-mode .scene-counter{font-size:6px}
+ body.mission-mode .observation-area{left:5px;bottom:5px;width:calc(100% - 10px);height:94px;padding:4px;gap:2px}
+ body.mission-mode .observation-head{font-size:6px}
+ body.mission-mode .focused-observation,body.mission-mode .empty-observation{padding:3px;font-size:7px;line-height:1.1}
+ body.mission-mode .focused-kicker{font-size:6px}
+ body.mission-mode .focused-observation p{font-size:7px;-webkit-line-clamp:1}
+ body.mission-mode .observation-list{gap:3px}
+ body.mission-mode .observation-card{padding:3px;gap:2px}
+ body.mission-mode .observation-card strong{font-size:6px}
+ body.mission-mode .observation-card small{font-size:6px;-webkit-line-clamp:1}
+ body.mission-mode .phase-content>.submit-row{right:5px;bottom:103px;max-width:50%;padding:4px;gap:3px}
+ body.mission-mode .submit-row .btn{height:28px;min-height:28px;padding:0 7px;font-size:8px}
+ body.mission-mode .hint{font-size:6px}
+ body.mission-mode .phase-content-explore .scene-event-panel{right:5px;bottom:105px;width:42%;max-width:220px;padding:5px}
+ body.mission-mode .phase-content-investigate .mission-intro,body.mission-mode .phase-content-predict .mission-intro{width:55%}
+ body.mission-mode .phase-content-investigate .decision-guide,body.mission-mode .phase-content-predict .decision-guide{top:95px;left:5px;width:57%;padding:5px;font-size:7px}
+ body.mission-mode .decision-guide strong{font-size:6px}
+ body.mission-mode .phase-content-investigate .energy-panel{top:5px;right:5px;width:37%;padding:5px}
+ body.mission-mode .energy-panel .panel-label,body.mission-mode .energy-panel small{font-size:6px}
+ body.mission-mode .energy-panel strong{font-size:7px}
+ body.mission-mode .energy-cell{width:9px;height:7px}
+ body.mission-mode .scan-evidence-area{top:152px;left:5px;width:48%;height:68px;padding:3px}
+ body.mission-mode .scan-evidence-area>.evidence-strip{grid-template-columns:1fr;gap:2px}
+ body.mission-mode .scan-evidence-area .evidence{padding:3px;font-size:6px;-webkit-line-clamp:2}
+ body.mission-mode .scan-evidence-area .evidence .tag{font-size:5px}
+ body.mission-mode .phase-content-investigate .choice-grid{left:5px;right:5px;bottom:38px;width:auto;height:82px;gap:3px;padding:3px}
+ body.mission-mode .choice{padding:4px}
+ body.mission-mode .choice .choice-icon{font-size:10px;margin-bottom:1px}
+ body.mission-mode .choice strong{font-size:7px}
+ body.mission-mode .choice small{font-size:6px;-webkit-line-clamp:2}
+ body.mission-mode .scan-choice{padding:14px 4px 3px}
+ body.mission-mode .scan-cost{font-size:5px;top:4px;right:4px}
+ body.mission-mode .phase-content-investigate>.submit-row,body.mission-mode .phase-content-predict>.submit-row{right:5px;bottom:5px;max-width:45%;padding:3px}
+ body.mission-mode .phase-content-investigate .scan-panel,body.mission-mode .phase-content-predict .scan-panel{right:5px;top:38%;bottom:auto;width:44%;padding:5px}
+ body.mission-mode .phase-content-predict .vote-tally{top:5px;right:5px;width:40%;padding:4px}
+ body.mission-mode .vote-tally-title{font-size:6px}
+ body.mission-mode .vote-tally-row{font-size:7px}
+ body.mission-mode .phase-content-predict>.evidence-strip{top:148px;left:5px;width:48%;max-height:68px;grid-template-columns:1fr;padding:3px;gap:2px}
+ body.mission-mode .phase-content-predict>.evidence-strip .evidence{padding:3px;font-size:6px}
+ body.mission-mode .phase-content-predict>.evidence-strip .evidence .tag{font-size:5px}
+ body.mission-mode .answer-area{left:5px;right:5px;bottom:38px;width:auto;height:94px;gap:3px;padding:4px}
+ body.mission-mode .answer-area>.phase-pill{font-size:6px}
+ body.mission-mode .answer-area>.choice-grid{gap:3px}
+ body.mission-mode .answer-area .choice{padding:3px}
+ body.mission-mode .confidence-row{gap:4px}
+ body.mission-mode .confidence-row .field-label{font-size:5px}
+ body.mission-mode .confidence-options{gap:2px}
+ body.mission-mode .confidence{padding:2px 4px;gap:2px}
+ body.mission-mode .confidence b{font-size:7px}
+ body.mission-mode .confidence span{font-size:6px}
+ body.mission-mode .phase-content-reveal .mission-intro{top:5px;right:5px;width:49%;padding:5px}
+ body.mission-mode .phase-content-reveal .mission-brief{display:none}
+ body.mission-mode .phase-content-reveal .debrief-panel{right:5px;bottom:40px;width:54%;max-height:calc(100% - 95px);gap:3px;padding:4px}
+ body.mission-mode .phase-content-reveal .debrief-panel>.finding-banner{font-size:7px;padding:4px}
+ body.mission-mode .phase-content-reveal .debrief-panel>.result-box{grid-template-columns:22px 1fr;gap:4px;padding:2px}
+ body.mission-mode .phase-content-reveal .result-seal{width:20px;height:20px;font-size:10px}
+ body.mission-mode .phase-content-reveal .debrief-panel>.result-box h3{font-size:9px}
+ body.mission-mode .phase-content-reveal .debrief-panel>.result-box p{font-size:7px;line-height:1.15;margin:3px 0}
+ body.mission-mode .phase-content-reveal .debrief-panel>.result-box .answer-votes{display:none}
+ body.mission-mode .phase-content-reveal .debrief-panel>.score-breakdown{gap:2px}
+ body.mission-mode .phase-content-reveal .score-breakdown>div{padding:3px}
+ body.mission-mode .phase-content-reveal .score-breakdown span{font-size:5px}
+ body.mission-mode .phase-content-reveal .score-breakdown b{font-size:6px}
+ body.mission-mode .phase-content-reveal>.submit-row{left:5px;right:auto;bottom:5px;max-width:43%;padding:3px}
+ body.mission-mode .phase-content-reveal .finding-panel{left:5px;right:auto;bottom:40px;width:42%;padding:4px}
+ body.mission-mode .phase-content-finished .report-overview{top:5px;left:5px;width:36%;padding:6px}
+ body.mission-mode .phase-content-finished .report-overview .mission-title{font-size:13px}
+ body.mission-mode .phase-content-finished .report-overview .mission-brief{font-size:7px}
+ body.mission-mode .phase-content-finished .final-orbit{width:45px;height:45px;margin:0}
+ body.mission-mode .phase-content-finished .final-score{margin:5px 0;padding:5px}
+ body.mission-mode .phase-content-finished .final-score>span{font-size:6px}
+ body.mission-mode .phase-content-finished .final-score>strong{font-size:15px}
+ body.mission-mode .phase-content-finished .final-report{top:5px;right:5px;bottom:38px;width:61%;padding:5px}
+ body.mission-mode .phase-content-finished .final-report h2{font-size:12px;margin:0}
+ body.mission-mode .phase-content-finished .final-report>p{display:none}
+ body.mission-mode .phase-content-finished .report-list{grid-template-columns:1fr;gap:2px}
+ body.mission-mode .phase-content-finished .report-entry{padding:3px;gap:3px}
+ body.mission-mode .phase-content-finished .report-entry small{font-size:6px;-webkit-line-clamp:1}
+ body.mission-mode .phase-content-finished .phase-content>.submit-row{left:5px;right:5px;bottom:3px;padding:2px}
+ body.mission-mode .phase-content-lobby{gap:6px;padding:10px}
+ body.mission-mode .phase-content-lobby>.mission-title{font-size:clamp(25px,8vw,38px)}
+ body.mission-mode .phase-content-lobby>.mission-brief{font-size:10px}
+ body.mission-mode .phase-content-lobby>.journey-track{display:none}
+ body.mission-mode .phase-content-lobby>.lobby-preview{flex-wrap:wrap;font-size:7px}
+}
+@media(max-height:650px){
+ body.mission-mode .shell{padding-top:3px;padding-bottom:4px;gap:2px}
+ body.mission-mode .topbar{height:22px;min-height:22px}
+ body.mission-mode .game-main{grid-template-rows:28px 45px minmax(0,1fr);gap:2px}
+ body.mission-mode .crew-bar{min-height:45px;padding:3px 7px}
+ body.mission-mode .mission-intro{padding-top:6px;padding-bottom:6px}
+ body.mission-mode .scene-instruction{top:128px}
+ body.mission-mode .phase-content-investigate .decision-guide,body.mission-mode .phase-content-predict .decision-guide{top:120px}
+ body.mission-mode .scan-evidence-area{top:186px}
+ body.mission-mode .phase-content-predict>.evidence-strip{top:178px}
+ body.mission-mode .phase-content-investigate .choice-grid{height:90px;bottom:54px}
+ body.mission-mode .answer-area{height:116px}
+}
+@media(max-width:600px) and (max-height:650px){
+ body.mission-mode .game-main{grid-template-rows:27px 53px minmax(0,1fr)}
+ body.mission-mode .crew-bar{min-height:53px}
+ body.mission-mode .scene-instruction{top:86px}
+ body.mission-mode .phase-content-investigate .decision-guide,body.mission-mode .phase-content-predict .decision-guide{top:84px}
+ body.mission-mode .scan-evidence-area{top:135px}
+ body.mission-mode .phase-content-predict>.evidence-strip{top:135px}
+ body.mission-mode .phase-content-investigate .choice-grid{height:73px}
+ body.mission-mode .answer-area{height:84px}
+}
+@media(prefers-reduced-motion:reduce){body.mission-mode .phase-content>*{animation:none!important}}

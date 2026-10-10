@@ -22,3 +22,36 @@
     @media(max-width:760px){.scene-wrap{min-height:170px}.scene-caption{font-size:7px;left:8px;top:8px}.hotspot{width:30px;height:30px}.hotspot-label{max-width:96px;font-size:7px;padding:4px 5px}.observation-list{grid-template-columns:1fr}.observation-card small{font-size:10px}.score-breakdown{grid-template-columns:1fr 1fr}.scene-instruction{align-items:flex-start}.scene-counter{font-size:8px}}
     @media(max-width:460px){.scene-wrap{aspect-ratio:1.45;min-height:205px}.hotspot{width:27px;height:27px}.hotspot-label{white-space:normal;width:82px;text-align:center;line-height:1.25}.scene-caption{max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.scene-instruction small{max-width:210px}.scene-counter{margin-top:4px}.energy-cells{gap:3px}.energy-cell{width:14px}.confidence-options{display:grid;grid-template-columns:repeat(3,1fr)}.confidence{min-width:0;justify-content:center;padding:8px 5px}.confidence span{font-size:9px}.final-orbit{width:80px;height:80px;margin-right:0}.final-score{padding:14px}.lobby-preview{font-size:8px}}
     @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+    /* Expedition route and action feedback */
+    .journey-track{position:relative;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;margin:15px 0 18px;padding:8px 0 2px}
+    .journey-track:before{content:'';position:absolute;z-index:0;left:8%;right:8%;top:20px;border-top:1px solid #40516a}
+    .journey-stop{position:relative;z-index:1;display:flex;min-width:0;align-items:center;flex-direction:column;gap:5px;text-align:center;color:var(--dim)}
+    .journey-node{display:grid;place-items:center;width:25px;height:25px;border:1px solid #40516a;border-radius:50%;background:#111a2b;font:9px var(--mono);color:#9aa8ba;transition:background .35s,border-color .35s,box-shadow .35s}
+    .journey-name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:8px var(--mono);letter-spacing:.04em}
+    .journey-stop small{font:8px var(--mono);color:var(--cyan)}
+    .journey-stop.complete .journey-node{background:#15332d;border-color:#69c99e;color:#a7f2c2;box-shadow:0 0 13px #69c99e22}
+    .journey-stop.uncertain .journey-node{background:#30291f;border-color:#b18c56;color:#ffcf87}
+    .journey-stop.current .journey-node{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 0 4px #7ee7df16,0 0 18px #7ee7df44;animation:routePing 2s ease-in-out infinite}
+    .journey-track-final{margin:20px 0 24px}
+    .finding-banner{display:flex;align-items:center;gap:9px;margin:14px 0 4px;padding:10px 12px;border:1px solid #7ee7df32;border-radius:8px;background:linear-gradient(100deg,#7ee7df0c,transparent);font:9px var(--mono);letter-spacing:.08em;color:var(--cyan);animation:findReveal .7s both}
+    .vote-tally{display:grid;gap:7px;margin:13px 0;padding:11px 13px;border:1px solid #293b52;border-radius:9px;background:#0c1522}.vote-tally-title{font:8px var(--mono);letter-spacing:.1em;color:var(--cyan);margin-bottom:1px}.vote-tally-row{display:grid;grid-template-columns:minmax(90px,1fr) minmax(45px,1.2fr) 18px;gap:8px;align-items:center;font-size:10px;color:#c8d2df}.vote-tally-row>div{height:5px;overflow:hidden;border-radius:5px;background:#263449}.vote-tally-row i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#4fa9a6,#9aece0);animation:barGrow .7s both}.vote-tally-row>b{font:9px var(--mono);color:var(--amber);text-align:right}.answer-votes{display:flex;flex-wrap:wrap;gap:5px;margin:7px 0 10px}.answer-votes span{padding:4px 7px;border:1px solid #35445a;border-radius:5px;background:#121e30;font-size:9px;color:#cad3df}
+    .finding-icon{font-size:18px;color:var(--amber);animation:starPulse 1s ease-in-out 3 alternate}
+    .phase-predict .evidence{animation:evidenceArrive .55s both}
+    .phase-predict .evidence:nth-child(2){animation-delay:.12s}.phase-predict .evidence:nth-child(3){animation-delay:.24s}
+    .hotspot.just-found{animation:inspectReveal .8s ease-out 2}
+    .pulsar-world{transform-origin:530px 154px;animation:pulsarRotate 8s linear infinite}
+    .final-orbit{float:none;display:block;width:118px;height:84px;margin:4px 0 16px}
+    .final-report{clear:both;margin:18px 0;padding:18px;border:1px solid #30445a;border-radius:12px;background:radial-gradient(ellipse at 50% 0%,#172941,#0b1421 75%)}
+    .final-report h2{margin:0 0 5px;font:500 17px var(--display);color:#e7f4f5}.final-report>p{margin:0;color:var(--muted);font-size:11px;line-height:1.5}
+    .report-list{display:grid;gap:6px}.report-entry{display:grid;grid-template-columns:25px minmax(0,1fr) auto;gap:9px;align-items:center;padding:9px 10px;border:1px solid #25354a;border-radius:7px;background:#0b1420}
+    .report-index{font:9px var(--mono);color:var(--cyan)}.report-entry strong,.report-entry small{display:block}.report-entry strong{font:500 11px var(--display);margin-bottom:3px}.report-entry small{font-size:9px;line-height:1.4;color:var(--muted)}.report-entry>b{font:9px var(--mono);color:var(--amber);white-space:nowrap}
+    .final-narrative{padding:14px 16px;border-left:2px solid var(--amber);background:#111a27;border-radius:0 8px 8px 0}.final-narrative h3{margin:0 0 5px;font:500 14px var(--display);color:var(--amber)}.final-narrative p{margin:0;font-size:11px;line-height:1.6;color:#c2c9d4}
+    @keyframes routePing{50%{box-shadow:0 0 0 8px #7ee7df08,0 0 22px #7ee7df66}}
+    @keyframes inspectReveal{0%{box-shadow:0 0 0 0 #9de4ad99}65%{box-shadow:0 0 0 18px #9de4ad00}100%{box-shadow:0 0 0 0 #9de4ad00}}
+    @keyframes findReveal{from{opacity:0;transform:translateY(8px);filter:brightness(1.8)}to{opacity:1;transform:translateY(0);filter:brightness(1)}}
+    @keyframes evidenceArrive{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes barGrow{from{width:0}to{width:var(--vote-width,100%)}}
+    @keyframes pulsarRotate{to{transform:rotate(360deg)}}
+    @media(max-width:460px){.journey-name{font-size:7px}.journey-track{gap:2px}.final-report{padding:13px}.report-entry{grid-template-columns:20px minmax(0,1fr) auto;gap:6px}.report-entry small{font-size:8px}}
+    @media(prefers-reduced-motion:reduce){.pulsar-world{animation:none!important}}

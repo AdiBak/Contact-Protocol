@@ -1,12 +1,16 @@
 import { esc } from './text.js';
 
-export function sceneMarkup(mission, discoveries, selectedId) {
+export function sceneMarkup(mission, discoveries, selectedId, lastEvent = null) {
   const { theme } = mission;
   const discovered = new Set(discoveries);
   const hotspots = mission.hotspots.map((point) => {
     const found = discovered.has(point.id);
-    return `<button class="hotspot ${found ? 'found' : ''} ${selectedId === point.id ? 'focused' : ''}" type="button" data-hotspot="${esc(point.id)}" style="--x:${point.x}%;--y:${point.y}%" aria-label="${found ? 'Review' : 'Inspect'} ${esc(point.title)}"><span class="hotspot-ping">${found ? '✓' : '+'}</span><span class="hotspot-label">${esc(point.title)}</span></button>`;
+    const pulse = lastEvent?.kind === 'inspection' && lastEvent.pointId === point.id;
+    return `<button class="hotspot ${found ? 'found' : ''} ${selectedId === point.id ? 'focused' : ''} ${pulse ? 'just-found' : ''}" type="button" data-hotspot="${esc(point.id)}" style="--x:${point.x}%;--y:${point.y}%" aria-label="${found ? 'Review' : 'Inspect'} ${esc(point.title)}"><span class="hotspot-ping">${found ? '✓' : '+'}</span><span class="hotspot-label">${esc(point.title)}</span></button>`;
   }).join('');
+  const world = theme.kind === 'pulsar'
+    ? `<g class="pulsar-world"><ellipse cx="${theme.x}" cy="${theme.y}" rx="${theme.r * 1.55}" ry="${theme.r * .17}" fill="${theme.accent}" opacity=".18"/><path d="M${theme.x} ${theme.y - theme.r * 1.5}L${theme.x - 14} ${theme.y - 18}L${theme.x + 14} ${theme.y - 18}Z" fill="${theme.accent}" opacity=".26"/><path d="M${theme.x} ${theme.y + theme.r * 1.5}L${theme.x - 14} ${theme.y + 18}L${theme.x + 14} ${theme.y + 18}Z" fill="${theme.accent}" opacity=".2"/><circle cx="${theme.x}" cy="${theme.y}" r="${theme.r * .23}" fill="url(#sceneWorld)"/><circle cx="${theme.x}" cy="${theme.y}" r="${theme.r * .34}" fill="none" stroke="${theme.accent}" stroke-opacity=".6" stroke-width="2"/></g>`
+    : `<g class="planet-world"><circle cx="${theme.x}" cy="${theme.y}" r="${theme.r}" fill="url(#sceneWorld)"/><path d="M${theme.x - theme.r} ${theme.y}a${theme.r} ${theme.r} 0 1 0 ${theme.r * 2} 0a${theme.r * .76} ${theme.r} 0 1 1 -${theme.r * 2} 0" fill="#07101e" opacity=".27"/><path d="M${theme.x - theme.r * .72} ${theme.y - theme.r * .35}q${theme.r * .7} ${theme.r * .14} ${theme.r * 1.4} 0M${theme.x - theme.r * .8} ${theme.y + theme.r * .24}q${theme.r * .8} ${theme.r * -.15} ${theme.r * 1.6} 0" fill="none" stroke="#f5ead6" stroke-opacity=".16" stroke-width="3"/>${theme.rings ? `<ellipse cx="${theme.x}" cy="${theme.y + theme.r * .12}" rx="${theme.r * 1.7}" ry="${theme.r * .32}" fill="none" stroke="${theme.accent}" stroke-opacity=".55" stroke-width="8" transform="rotate(-12 ${theme.x} ${theme.y})"/><ellipse cx="${theme.x}" cy="${theme.y + theme.r * .12}" rx="${theme.r * 1.7}" ry="${theme.r * .32}" fill="none" stroke="#f6e4c3" stroke-opacity=".26" stroke-width="2" transform="rotate(-12 ${theme.x} ${theme.y})"/>` : ''}</g>`;
 
   return `<div class="scene-wrap" style="--scene-color:${theme.color};--scene-accent:${theme.accent}">
     <svg class="scene-art" viewBox="0 0 1000 500" role="img" aria-label="First-person view inside the ${esc(mission.location)}">
@@ -23,8 +27,7 @@ export function sceneMarkup(mission, discoveries, selectedId) {
       </g>
       <g clip-path="url(#windowClip)">
         <rect x="260" y="40" width="500" height="230" fill="url(#sceneGlass)"/>
-        <circle cx="${theme.x}" cy="${theme.y}" r="${theme.r}" fill="url(#sceneWorld)"/>
-        <ellipse cx="${theme.x}" cy="${theme.y + theme.r * 0.69}" rx="${theme.r * 1.65}" ry="${theme.r * 0.24}" fill="none" stroke="${theme.accent}" stroke-opacity=".48" stroke-width="3" transform="rotate(-12 ${theme.x} ${theme.y})"/>
+        ${world}
         <path d="M250 230Q470 175 790 233v55H250z" fill="#18273b" opacity=".75"/>
       </g>
       <path d="M315 48h370l47 212H268z" fill="none" stroke="#71819d" stroke-width="9"/>

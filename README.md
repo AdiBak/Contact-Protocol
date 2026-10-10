@@ -10,16 +10,16 @@ The game uses PeerJS for WebRTC signaling and direct peer-to-peer data connectio
 
 ## Cooperative game loop
 
-Play five missions together. Each one moves through four phases:
+Play five science missions together, from radio astronomy to ocean worlds. Each mission adds a finding or open question to a shared expedition record:
 
-1. **Explore:** Click three points of interest in a first-person science scene. Discoveries are shared with the crew. When everyone is ready, the crew moves on; inspecting every point is optional.
+1. **Explore:** Click points of interest in a first-person science scene. Discoveries are shared with the crew. A majority of connected researchers can move the crew on; inspecting every point is optional.
 2. **Choose scans:** Each researcher privately votes for one scan. The crew has four shared research-energy units. Distinct scans are ranked by votes, with ties resolved by the order shown. The game funds scans in that order while they fit the remaining energy.
-3. **Interpret:** Review the observations and funded scan evidence. Each researcher submits a hypothesis and confidence level privately. The most-voted hypothesis is the crew conclusion; ties use the first listed answer.
-4. **Debrief:** The game explains the scientific finding and updates the shared research score.
+3. **Interpret:** Review the observations and funded scan evidence. Each researcher submits a hypothesis and confidence level privately. A hypothesis needs more than half the crew's votes to become the crew conclusion; a split vote is recorded as an open question. The debrief shows how the crew voted.
+4. **Debrief:** The game explains the scientific finding, animates it into the expedition log, and updates the shared research score.
 
 The crew earns 2 research points when a majority reaches the correct conclusion, plus 1 point for each funded scan that provides useful evidence (evidence value 2 or 3). If the crew is correct and average confidence is high (2.5 or above), it earns 1 calibration point. If the crew is wrong at that confidence, it loses 1 point. The expedition score cannot fall below zero. There is no individual leaderboard.
 
-After mission five, the shared score determines the expedition outcome: 18–25 RP is a Scientific Breakthrough, 10–17 RP is a Promising Signal, and 0–9 RP means the investigation continues.
+After mission five, the shared score determines the expedition outcome: 18–25 RP is a Scientific Breakthrough, 10–17 RP is a Promising Signal, and 0–9 RP means the investigation continues. The final field report shows every mission's conclusion, observations, funded scans, and score so the crew can see what its work produced.
 
 ## Project structure
 

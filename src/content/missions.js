@@ -2,7 +2,7 @@ export const missions = [
   {
     title: 'The Quiet Pulse', tag: 'RADIO ASTRONOMY', location: 'Deep-space observatory',
     brief: 'A faint radio source flashes toward Earth every 1.37 seconds. Its rhythm is astonishingly steady, and the source sits far beyond our solar system. What is making the beat?',
-    theme: { planet: 'Asterion', color: '#6dc9cb', accent: '#ffc779', world: '#8c7567', x: 530, y: 154, r: 68 },
+    theme: { planet: 'Asterion', kind: 'pulsar', color: '#6dc9cb', accent: '#ffc779', world: '#dcecff', x: 530, y: 154, r: 68 },
     hotspots: [
       { id: 'array', title: 'Telescope array', icon: '⌖', x: 19, y: 56, text: 'Several radio dishes are tracking the same patch of sky. Their shared pointing lets the crew rule out a signal coming from a single nearby instrument.' },
       { id: 'timing', title: 'Pulse chronometer', icon: '◷', x: 51, y: 61, text: 'The pulses arrive like clockwork, but the beat slows by a tiny amount over years. That gradual change may reveal how the source moves and loses energy.' },

@@ -23,6 +23,13 @@ export function allDone(state, key) {
   return active.length > 0 && active.every((player) => player[key] !== null && player[key] !== undefined);
 }
 
+export function majorityReached(state, key) {
+  const active = state.players.filter((player) => player.connected);
+  if (!active.length) return false;
+  const ready = active.filter((player) => player[key] === true).length;
+  return ready >= Math.floor(active.length / 2) + 1;
+}
+
 export function resolveScans(state, missions) {
   const mission = missions[state.round];
   const counts = new Map();
@@ -51,7 +58,8 @@ export function resolveRound(state, missions) {
   const answerCounts = new Map();
   connected.forEach((player) => answerCounts.set(player.answer, (answerCounts.get(player.answer) || 0) + 1));
   const rankedAnswers = [...answerCounts.keys()].sort((a, b) => answerCounts.get(b) - answerCounts.get(a) || a - b);
-  const crewAnswer = rankedAnswers[0] ?? null;
+  const leadingAnswer = rankedAnswers[0] ?? null;
+  const crewAnswer = leadingAnswer !== null && answerCounts.get(leadingAnswer) > connected.length / 2 ? leadingAnswer : null;
   const correctVotes = connected.filter((player) => player.answer === mission.correct).length;
   const crewWon = correctVotes > connected.length / 2;
   const averageConfidence = connected.length
@@ -67,6 +75,7 @@ export function resolveRound(state, missions) {
     correctVotes,
     total: connected.length,
     crewWon,
+    answerVotes: Object.fromEntries(answerCounts),
     averageConfidence,
     conclusionPoints,
     scanPoints,
@@ -74,6 +83,16 @@ export function resolveRound(state, missions) {
     roundPoints,
     used: [...state.fundedScans],
     energyUsed: state.energyUsed
+  };
+  state.journeyLog = state.journeyLog || [];
+  state.journeyLog[state.round] = {
+    title: mission.title,
+    tag: mission.tag,
+    conclusion: crewAnswer === null ? 'No majority conclusion' : mission.answers[crewAnswer],
+    correct: crewWon,
+    discoveries: (state.discoveries || []).length,
+    scans: [...state.fundedScans],
+    points: roundPoints
   };
 }
 

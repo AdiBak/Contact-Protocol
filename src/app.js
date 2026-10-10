@@ -1,5 +1,5 @@
 import { missions } from './content/missions.js';
-import { allDone, expeditionOutcome, publicState, RESEARCH_BUDGET, resolveRound, resolveScans } from './game/rules.js';
+import { allDone, expeditionOutcome, majorityReached, publicState, RESEARCH_BUDGET, resolveRound, resolveScans } from './game/rules.js';
 import { sceneMarkup } from './game/scene.js';
 import { esc } from './game/text.js';
 
@@ -68,16 +68,18 @@ import { esc } from './game/text.js';
 
   function advanceIfReady() {
     if (!state) return;
-    if (state.phase === 'explore' && allDone(state, 'readyExplore')) {
+    if (state.phase === 'explore' && majorityReached(state, 'readyExplore')) {
       state.phase = 'investigate';
       state.players.forEach((player) => { player.investigation = null; });
     } else if (state.phase === 'investigate' && allDone(state, 'investigation')) {
       resolveScans(state, missions);
+      state.lastEvent = { kind: 'scan', id: `${state.round}-${Date.now()}` };
       state.phase = 'predict';
       state.players.forEach((player) => { player.answer = null; player.confidence = null; });
     } else if (state.phase === 'predict' && allDone(state, 'answer')) {
       state.phase = 'reveal';
       resolveRound(state, missions);
+      state.lastEvent = { kind: 'finding', id: `${state.round}-${Date.now()}` };
     }
   }
 
@@ -88,7 +90,10 @@ import { esc } from './game/text.js';
     const mission = missions[state.round];
 
     if (action === 'inspect' && state.phase === 'explore' && mission.hotspots.some((point) => point.id === value)) {
-      if (!state.discoveries.includes(value)) state.discoveries.push(value);
+      if (!state.discoveries.includes(value)) {
+        state.discoveries.push(value);
+        state.lastEvent = { kind: 'inspection', pointId: value, id: `${state.round}-${Date.now()}` };
+      }
     }
     if (action === 'readyExplore' && state.phase === 'explore') player.readyExplore = true;
     if (action === 'investigate' && state.phase === 'investigate' && Number.isInteger(value) && value >= 0 && value < mission.tests.length) {
@@ -154,6 +159,7 @@ import { esc } from './game/text.js';
     state.phase = 'lobby';
     state.teamScore = 0;
     state.lastResult = null;
+    state.journeyLog = [];
     resetMissionPlayers();
     state.players.forEach((player) => { player.score = 0; });
     broadcast();
@@ -211,7 +217,7 @@ import { esc } from './game/text.js';
     peer.on('open', (id) => {
       myId = `host-${id}`;
       hostPeerId = id;
-      state = { room, phase: 'lobby', round: 0, teamScore: 0, players: [{ id: myId, name, host: true, connected: true, score: 0, readyExplore: false, investigation: null, answer: null, confidence: null }], connections: {}, discoveries: [], fundedScans: [], scanVotes: {}, energyUsed: 0, lastResult: null };
+      state = { room, phase: 'lobby', round: 0, teamScore: 0, journeyLog: [], players: [{ id: myId, name, host: true, connected: true, score: 0, readyExplore: false, investigation: null, answer: null, confidence: null }], connections: {}, discoveries: [], fundedScans: [], scanVotes: {}, energyUsed: 0, lastResult: null };
       peer.on('connection', bindConnection);
       setBusy(false);
       showGame();
@@ -291,10 +297,27 @@ import { esc } from './game/text.js';
     }).join('');
   }
 
+  function voteTally(mission, votes) {
+    const cast = Object.values(votes || {}).reduce((sum, count) => sum + count, 0);
+    if (!cast) return '';
+    const rows = mission.tests.map((test, index) => ({ name: test.name, count: votes[index] || 0 }))
+      .filter((row) => row.count > 0)
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+    return `<div class="vote-tally"><div class="vote-tally-title">CREW SCAN VOTE · ${cast} CAST</div>${rows.map((row) => { const width = Math.round(row.count / cast * 100); return `<div class="vote-tally-row"><span>${esc(row.name)}</span><div><i style="--vote-width:${width}%;width:${width}%"></i></div><b>${row.count}</b></div>`; }).join('')}</div>`;
+  }
+
   function discoveryCards(mission) {
     return (state.discoveries || []).map((id) => mission.hotspots.find((point) => point.id === id)).filter(Boolean).map((point) => (
       `<button class="observation-card ${localHotspot === point.id ? 'active' : ''}" type="button" data-review-hotspot="${esc(point.id)}"><span class="observation-icon">${point.icon}</span><span><strong>${esc(point.title)}</strong><small>${esc(point.text)}</small></span><span class="observation-check">✓</span></button>`
     )).join('');
+  }
+
+  function journeyTrack(log = state?.journeyLog || [], final = false) {
+    return `<div class="journey-track ${final ? 'journey-track-final' : ''}" aria-label="Expedition route">${missions.map((mission, index) => {
+      const entry = log[index];
+      const current = !final && state?.round === index && state?.phase !== 'lobby' && state?.phase !== 'finished';
+      return `<div class="journey-stop ${entry ? (entry.correct ? 'complete' : 'uncertain') : ''} ${current ? 'current' : ''}"><span class="journey-node">${entry ? (entry.correct ? '✓' : '·') : String(index + 1).padStart(2, '0')}</span><span class="journey-name">${esc(mission.theme.planet || mission.location)}</span>${entry ? `<small>${entry.points >= 0 ? '+' : ''}${entry.points} RP</small>` : ''}</div>`;
+    }).join('')}</div>`;
   }
 
   function render() {
@@ -317,11 +340,11 @@ import { esc } from './game/text.js';
     let content = '';
 
     if (state.phase === 'lobby') {
-      content = `<div class="card-kicker">Awaiting launch authorization</div><h1 class="mission-title">Crew assembly</h1><p class="mission-brief">Share the room code with your crew. Together you will explore five 3D science scenes, choose scans with a shared energy budget, and interpret the evidence.</p><div class="lobby-preview"><span>01 · EXPLORE</span><b>→</b><span>02 · VOTE ON SCANS</span><b>→</b><span>03 · INTERPRET</span></div><div class="submit-row">${isHost ? '<button id="startBtn" class="btn btn-primary">Launch expedition ↗</button>' : '<span class="hint waiting-dots">Waiting for the host to launch</span>'}</div>`;
+      content = `<div class="card-kicker">Awaiting launch authorization</div><h1 class="mission-title">Crew assembly</h1><p class="mission-brief">Share the room code with your crew. Together, trace a chain of cosmic clues across five observatories, pool evidence, and build a shared field record.</p>${journeyTrack()}<div class="lobby-preview"><span>01 · SURVEY</span><b>→</b><span>02 · VOTE ON SCANS</span><b>→</b><span>03 · INTERPRET</span></div><div class="submit-row">${isHost ? '<button id="startBtn" class="btn btn-primary">Launch expedition ↗</button>' : '<span class="hint waiting-dots">Waiting for the host to launch</span>'}</div>`;
     } else if (state.phase === 'explore') {
       const selected = mission.hotspots.find((point) => point.id === localHotspot && discovered.includes(point.id)) || mission.hotspots.find((point) => point.id === discovered.at(-1));
       const ready = readyCount('readyExplore');
-      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} / ${mission.tag}</div><h1 class="mission-title">${esc(mission.title)}</h1><p class="mission-brief">${esc(mission.brief)}</p><div class="scene-instruction"><span class="instruction-orb">⌖</span><span><strong>Survey the scene</strong><small>Click the pulsing markers to inspect objects. Every discovery is shared with the crew.</small></span><span class="scene-counter">${discovered.length}/${mission.hotspots.length} FOUND</span></div>${sceneMarkup(mission, discovered, localHotspot)}<div class="observation-area"><div class="observation-head"><span>CREW OBSERVATIONS</span><span>${discovered.length} / ${mission.hotspots.length}</span></div>${selected ? `<div class="focused-observation"><div class="focused-kicker">${esc(selected.title)}</div><p>${esc(selected.text)}</p></div>` : '<div class="empty-observation">The crew has not inspected any equipment yet. Find a marker in the scene to reveal a field note.</div>'}<div class="observation-list">${discoveryCards(mission)}</div></div><div class="submit-row"><button id="readyExplore" class="btn btn-primary" ${localLocked ? 'disabled' : ''}>${localLocked ? 'Ready to scan ✓' : 'Ready to scan ↗'}</button><span class="hint">${ready}/${active.length} crew ready · explore as much or as little as you like</span></div>`;
+      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} / ${mission.tag}</div><h1 class="mission-title">${esc(mission.title)}</h1><p class="mission-brief">${esc(mission.brief)}</p>${journeyTrack()}<div class="scene-instruction"><span class="instruction-orb">⌖</span><span><strong>Survey the scene</strong><small>Inspect points of interest together. A majority of the crew can move the expedition on when ready.</small></span><span class="scene-counter">${discovered.length}/${mission.hotspots.length} FOUND</span></div>${sceneMarkup(mission, discovered, localHotspot, state.lastEvent)}<div class="observation-area"><div class="observation-head"><span>CREW OBSERVATIONS</span><span>${discovered.length} / ${mission.hotspots.length}</span></div>${selected ? `<div class="focused-observation"><div class="focused-kicker">${esc(selected.title)}</div><p>${esc(selected.text)}</p></div>` : '<div class="empty-observation">The crew has not inspected any equipment yet. Find a marker in the scene to reveal a field note.</div>'}<div class="observation-list">${discoveryCards(mission)}</div></div><div class="submit-row"><button id="readyExplore" class="btn btn-primary" ${localLocked ? 'disabled' : ''}>${localLocked ? 'Ready to scan ✓' : 'Ready to scan ↗'}</button><span class="hint">${ready}/${active.length} ready · ${Math.floor(active.length / 2) + 1} moves the crew on</span></div>`;
     } else if (state.phase === 'investigate') {
       const locked = readyCount('investigation');
       const budget = Array.from({ length: RESEARCH_BUDGET }, (_, index) => `<i class="energy-cell ${index < RESEARCH_BUDGET ? 'charged' : ''}"></i>`).join('');
@@ -330,14 +353,19 @@ import { esc } from './game/text.js';
       const locked = readyCount('answer');
       const scans = evidenceCards(mission, state.fundedScans || []);
       const observations = discoveryCards(mission);
-      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} / ${mission.tag}</div><h1 class="mission-title">What does the evidence support?</h1><p class="mission-brief">The crew spent ${state.energyUsed || 0} of ${RESEARCH_BUDGET} energy. Review the findings, then make a private call. A careful level of confidence is part of good science.</p><div class="evidence-strip">${scans || '<div class="empty-observation">No scans were funded this mission.</div>'}${observations}</div><div class="phase-pill">Choose your hypothesis</div><div class="choice-grid">${mission.answers.map((answer, index) => `<button class="choice answer-choice ${localAnswer === index ? 'selected' : ''}" data-answer="${index}" ${localLocked ? 'disabled' : ''}><span class="choice-icon">${['◉', '◈', '✧'][index]}</span><strong>${esc(answer)}</strong><small>Interpret the evidence</small></button>`).join('')}</div><div class="confidence-row"><span class="field-label">YOUR CONFIDENCE</span><div class="confidence-options">${[['1', 'Unsure'], ['2', 'Leaning'], ['3', 'High']].map(([value, label]) => `<button type="button" class="confidence ${localConfidence === Number(value) ? 'selected' : ''}" data-confidence="${value}" ${localLocked ? 'disabled' : ''}><b>${value}</b><span>${label}</span></button>`).join('')}</div></div><div class="submit-row"><button id="lockHypothesis" class="btn btn-primary" ${localAnswer === null || localLocked ? 'disabled' : ''}>${localLocked ? 'Hypothesis locked ✓' : 'Lock hypothesis'}</button><span class="hint">${locked}/${active.length} hypotheses locked</span></div>`;
+      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} / ${mission.tag}</div><h1 class="mission-title">What does the evidence support?</h1><p class="mission-brief">The crew spent ${state.energyUsed || 0} of ${RESEARCH_BUDGET} energy. Review the findings, then make a private call. A careful level of confidence is part of good science.</p>${voteTally(mission, state.scanVotes)}<div class="evidence-strip">${scans || '<div class="empty-observation">No scans were funded this mission.</div>'}${observations}</div><div class="phase-pill">Choose your hypothesis</div><div class="choice-grid">${mission.answers.map((answer, index) => `<button class="choice answer-choice ${localAnswer === index ? 'selected' : ''}" data-answer="${index}" ${localLocked ? 'disabled' : ''}><span class="choice-icon">${['◉', '◈', '✧'][index]}</span><strong>${esc(answer)}</strong><small>Interpret the evidence</small></button>`).join('')}</div><div class="confidence-row"><span class="field-label">YOUR CONFIDENCE</span><div class="confidence-options">${[['1', 'Unsure'], ['2', 'Leaning'], ['3', 'High']].map(([value, label]) => `<button type="button" class="confidence ${localConfidence === Number(value) ? 'selected' : ''}" data-confidence="${value}" ${localLocked ? 'disabled' : ''}><b>${value}</b><span>${label}</span></button>`).join('')}</div></div><div class="submit-row"><button id="lockHypothesis" class="btn btn-primary" ${localAnswer === null || localLocked ? 'disabled' : ''}>${localLocked ? 'Hypothesis locked ✓' : 'Lock hypothesis'}</button><span class="hint">${locked}/${active.length} hypotheses locked</span></div>`;
     } else if (state.phase === 'reveal') {
       const result = state.lastResult || { correctVotes: 0, total: active.length, used: [], crewWon: false, roundPoints: 0, calibrationPoints: 0, scanPoints: 0, conclusionPoints: 0 };
-      const crewAnswer = mission.answers[result.crewAnswer] || 'No crew conclusion';
-      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} DEBRIEF / ${mission.tag}</div><h1 class="mission-title">${esc(mission.title)}</h1><div class="result-box"><div class="result-seal">${result.crewWon ? '✓' : '∿'}</div><div><h3>${result.crewWon ? 'A strong crew finding' : 'The signal stays uncertain'}</h3><p><strong>Crew conclusion:</strong> ${esc(crewAnswer)}${result.crewWon ? ' · Correct' : ''}</p><p>${esc(mission.why)}</p><p class="result-score">${result.correctVotes} OF ${result.total} RESEARCHERS CORRECT · ${result.roundPoints >= 0 ? '+' : ''}${result.roundPoints} CREW RP THIS MISSION</p></div></div><div class="score-breakdown"><div><span>Conclusion</span><b>${result.conclusionPoints >= 0 ? '+' : ''}${result.conclusionPoints} RP</b></div><div><span>Useful scans</span><b>+${result.scanPoints} RP</b></div><div><span>Confidence calibration</span><b>${result.calibrationPoints > 0 ? '+' : ''}${result.calibrationPoints} RP</b></div></div><div class="evidence-strip">${evidenceCards(mission, result.used || [])}${discoveryCards(mission)}</div><div class="crew-scoreline"><span>SHARED RESEARCH TOTAL</span><strong>${state.teamScore} RP</strong></div><div class="submit-row">${isHost ? `<button id="nextBtn" class="btn btn-primary">${state.round === missions.length - 1 ? 'Final expedition report ↗' : 'Next mission ↗'}</button>` : '<span class="hint waiting-dots">Waiting for the host</span>'}</div>`;
+      const crewAnswer = mission.answers[result.crewAnswer] || 'No majority conclusion';
+      const answerBreakdown = Object.entries(result.answerVotes || {}).map(([index, count]) => ({ answer: mission.answers[Number(index)], count }))
+        .filter((row) => row.answer && row.count > 0).sort((a, b) => b.count - a.count)
+        .map((row) => `<span>${esc(row.answer)} · ${row.count}</span>`).join('');
+      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} DEBRIEF / ${mission.tag}</div><h1 class="mission-title">${esc(mission.title)}</h1><div class="finding-banner"><span class="finding-icon">${result.crewWon ? '✦' : '⌁'}</span><span>${result.crewWon ? 'FINDING ADDED TO EXPEDITION LOG' : 'OPEN QUESTION ADDED TO EXPEDITION LOG'}</span></div><div class="result-box"><div class="result-seal">${result.crewWon ? '✓' : '∿'}</div><div><h3>${result.crewWon ? 'A strong crew finding' : 'The signal stays uncertain'}</h3><p><strong>Crew conclusion:</strong> ${esc(crewAnswer)}${result.crewWon ? ' · Correct' : ''}</p><div class="answer-votes">${answerBreakdown}</div><p>${esc(mission.why)}</p><p class="result-score">${result.correctVotes} OF ${result.total} RESEARCHERS CORRECT · ${result.roundPoints >= 0 ? '+' : ''}${result.roundPoints} CREW RP THIS MISSION</p></div></div>${journeyTrack()}<div class="score-breakdown"><div><span>Conclusion</span><b>${result.conclusionPoints >= 0 ? '+' : ''}${result.conclusionPoints} RP</b></div><div><span>Useful scans</span><b>+${result.scanPoints} RP</b></div><div><span>Confidence calibration</span><b>${result.calibrationPoints > 0 ? '+' : ''}${result.calibrationPoints} RP</b></div></div><div class="evidence-strip">${evidenceCards(mission, result.used || [])}${discoveryCards(mission)}</div><div class="crew-scoreline"><span>SHARED RESEARCH TOTAL</span><strong>${state.teamScore} RP</strong></div><div class="submit-row">${isHost ? `<button id="nextBtn" class="btn btn-primary">${state.round === missions.length - 1 ? 'Final expedition report ↗' : 'Continue expedition ↗'}</button>` : '<span class="hint waiting-dots">Waiting for the host</span>'}</div>`;
     } else {
       const outcome = expeditionOutcome(state.teamScore);
-      content = `<div class="final-orbit"><div class="final-star">✦</div><div class="final-ring ring-one"></div><div class="final-ring ring-two"></div></div><div class="card-kicker">TRANSMISSION COMPLETE · FIVE MISSIONS</div><h1 class="mission-title">${esc(outcome.title)}</h1><p class="mission-brief">${esc(outcome.detail)}</p><div class="final-score"><span>SHARED RESEARCH SCORE</span><strong>${state.teamScore}<small> RP</small></strong></div><div class="result-box"><h3>The unknown, a little less unknown.</h3><p>Good science grows through careful observation, useful tests, and conclusions that match the strength of the evidence. Your crew has a field record to build on.</p></div><div class="submit-row">${isHost ? '<button id="restartBtn" class="btn btn-primary">Start a new expedition ↗</button>' : ''}<button id="leaveBtn" class="btn btn-quiet">Leave mission</button></div>`;
+      const log = state.journeyLog || [];
+      const summaries = log.map((entry, index) => `<div class="report-entry"><span class="report-index">${String(index + 1).padStart(2, '0')}</span><div><strong>${esc(entry.title)}</strong><small>${esc(entry.conclusion)} · ${entry.discoveries} observations · ${entry.scans.length} scans funded</small></div><b>${entry.points >= 0 ? '+' : ''}${entry.points} RP</b></div>`).join('');
+      content = `<div class="final-orbit"><div class="final-star">✦</div><div class="final-ring ring-one"></div><div class="final-ring ring-two"></div></div><div class="card-kicker">TRANSMISSION COMPLETE · FIVE MISSIONS</div><h1 class="mission-title">${esc(outcome.title)}</h1><p class="mission-brief">${esc(outcome.detail)}</p><div class="final-score"><span>EXPEDITION OUTCOME</span><strong>${state.teamScore}<small> RP</small></strong></div><section class="final-report"><h2>Expedition field report</h2><p>Your crew's observations and tests shaped this route through the unknown.</p>${journeyTrack(log, true)}<div class="report-list">${summaries}</div></section><div class="final-narrative"><h3>The unknown, a little less unknown.</h3><p>Good science grows through careful observation, useful tests, and conclusions that match the strength of the evidence. Your crew leaves a record the next expedition can build on.</p></div><div class="submit-row">${isHost ? '<button id="restartBtn" class="btn btn-primary">Start a new expedition ↗</button>' : ''}<button id="leaveBtn" class="btn btn-quiet">Leave mission</button></div>`;
     }
 
     const roster = state.players.map((player) => {
@@ -349,7 +377,7 @@ import { esc } from './game/text.js';
     }).join('');
     const missionProgress = state.phase === 'lobby' ? 0 : state.phase === 'finished' ? 100 : ((state.round + (state.phase === 'reveal' ? 1 : 0)) / missions.length) * 100;
     const sideNote = state.phase === 'lobby' ? 'Invite 1–7 friends with the room code.' : `Shared research: ${state.teamScore} RP · ${RESEARCH_BUDGET} energy each mission`;
-    game.innerHTML = `<div class="game-layout"><main class="game-main"><div class="room-head"><div><div class="card-kicker">MISSION ROOM</div><div class="room-id">${esc(room || state.room)}</div></div><div class="round-meta"><span class="phase-pill">${pill}</span><br/>${state.phase === 'lobby' ? 'READY WHEN YOU ARE' : state.phase === 'finished' ? 'FIELD REPORT COMPLETE' : `MISSION ${String(state.round + 1).padStart(2, '0')} OF 05`}</div></div>${content}</main><aside class="sidebar"><div class="sidebar-card"><div class="roster-title"><span>Research crew</span><span>${active.length}/8</span></div>${roster}<div class="progress"><span style="width:${missionProgress}%"></span></div><div class="sidebar-note">${sideNote}</div>${isHost && state.phase === 'lobby' ? '<button id="copyCode" class="copy-code">COPY ROOM CODE ↗</button>' : ''}</div><div class="sidebar-card mission-brief-card"><div class="card-kicker">FIELD NOTES</div><div class="sidebar-note">A discovery is a clue, not a verdict. Spend energy on evidence that can distinguish between competing explanations.</div><div class="crew-scoreline compact"><span>EXPEDITION SCORE</span><strong>${state.teamScore} RP</strong></div></div></aside></div>`;
+    game.innerHTML = `<div class="game-layout"><main class="game-main phase-${state.phase}"><div class="room-head"><div><div class="card-kicker">MISSION ROOM</div><div class="room-id">${esc(room || state.room)}</div></div><div class="round-meta"><span class="phase-pill">${pill}</span><br/>${state.phase === 'lobby' ? 'READY WHEN YOU ARE' : state.phase === 'finished' ? 'FIELD REPORT COMPLETE' : `MISSION ${String(state.round + 1).padStart(2, '0')} OF 05`}</div></div>${content}</main><aside class="sidebar"><div class="sidebar-card"><div class="roster-title"><span>Research crew</span><span>${active.length}/8</span></div>${roster}<div class="progress"><span style="width:${missionProgress}%"></span></div><div class="sidebar-note">${sideNote}</div>${isHost && state.phase === 'lobby' ? '<button id="copyCode" class="copy-code">COPY ROOM CODE ↗</button>' : ''}</div><div class="sidebar-card mission-brief-card"><div class="card-kicker">FIELD NOTES</div><div class="sidebar-note">A discovery is a clue, not a verdict. Spend energy on evidence that can distinguish between competing explanations.</div><div class="crew-scoreline compact"><span>EXPEDITION SCORE</span><strong>${state.teamScore} RP</strong></div></div></aside></div>`;
 
     $('#startBtn')?.addEventListener('click', startMission);
     $('#copyCode')?.addEventListener('click', copyRoom);

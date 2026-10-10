@@ -1,27 +1,33 @@
 # Contact Protocol
 
-**A room-code science mystery for 2–8 players.** Work through five space-science missions, decide which evidence to investigate, then privately interpret what your crew uncovers.
+**A cooperative room-code science mystery for 2–8 players.** Explore first-person mission scenes, pool observations, spend shared research energy, and decide what the evidence supports across five linked expeditions.
 
 ## Play
 
-Serve this folder as a static site, or deploy it to any static web host. Because the game uses JavaScript modules, open it through a web server rather than directly as a `file://` URL. For local play, run `python3 -m http.server 4173` in this folder and open `http://localhost:4173`. For multiplayer, use the deployed HTTPS URL, create a mission, and share the six-character room code. Friends join from their own devices. No account or app install is needed.
+Serve this folder as a static site, or deploy it to a static web host. Because the game uses JavaScript modules, open it through a web server rather than as a `file://` URL. For local play, run `python3 -m http.server 4173` in this folder and open `http://localhost:4173`. For multiplayer, use the deployed HTTPS URL, create a mission, and share the six-character room code. Friends join from their own devices. No account or app install is needed.
 
 The game uses PeerJS for WebRTC signaling and direct peer-to-peer data connections. The player who creates the room hosts the game state in their browser; there is no application server or database. PeerJS Cloud is used as the signaling broker, and the default public STUN service is used for WebRTC connection discovery. Players need an internet connection, and some restrictive networks may prevent direct peer connections.
 
-## Game loop
+## Cooperative game loop
 
-Each of five missions has two simultaneous-choice phases:
+Play five missions together. Each one moves through four phases:
 
-1. Each researcher privately locks one investigation. The crew sees the evidence returned by the distinct investigations its members chose.
-2. Each researcher privately locks a hypothesis. The game reveals the answer, explains the relevant science, and updates individual and crew research points.
+1. **Explore:** Click three points of interest in a first-person science scene. Discoveries are shared with the crew. When everyone is ready, the crew moves on; inspecting every point is optional.
+2. **Choose scans:** Each researcher privately votes for one scan. The crew has four shared research-energy units. Distinct scans are ranked by votes, with ties resolved by the order shown. The game funds scans in that order while they fit the remaining energy.
+3. **Interpret:** Review the observations and funded scan evidence. Each researcher submits a hypothesis and confidence level privately. The most-voted hypothesis is the crew conclusion; ties use the first listed answer.
+4. **Debrief:** The game explains the scientific finding and updates the shared research score.
 
-Correct hypotheses earn 2 research points. Choosing a high-value investigation earns 2 points, so sound scientific reasoning can score even when a prediction is wrong. The crew earns one point per distinct investigation used and two more when most connected researchers reach the correct conclusion. The highest individual score leads the crew leaderboard after mission five.
+The crew earns 2 research points when a majority reaches the correct conclusion, plus 1 point for each funded scan that provides useful evidence (evidence value 2 or 3). If the crew is correct and average confidence is high (2.5 or above), it earns 1 calibration point. If the crew is wrong at that confidence, it loses 1 point. The expedition score cannot fall below zero. There is no individual leaderboard.
+
+After mission five, the shared score determines the expedition outcome: 18–25 RP is a Scientific Breakthrough, 10–17 RP is a Promising Signal, and 0–9 RP means the investigation continues.
 
 ## Project structure
 
 - `index.html` — page structure and metadata.
-- `styles.css` — responsive visual design.
-- `src/app.js` — lobby, multiplayer flow, and screen interaction.
-- `src/content/missions.js` — mission prompts, investigation choices, evidence, and science explanations.
-- `src/game/rules.js` — score resolution, phase readiness, and private state sent to players.
+- `styles.css` — responsive visual design, scene styling, and motion.
+- `src/app.js` — lobby, room-code multiplayer flow, phase rendering, and interactions.
+- `src/content/missions.js` — mission stories, scenes, points of interest, scans, evidence, and science explanations.
+- `src/game/scene.js` — first-person scene illustration and clickable discovery markers.
+- `src/game/rules.js` — shared budget, readiness, scoring, and privacy-safe state.
+- `src/game/text.js` — safe text rendering for player and mission content.
 - `cover.svg` — project cover and social preview image.

@@ -91,13 +91,15 @@ import { esc } from './game/text.js';
       state.players.forEach((player) => { player.investigation = null; });
     } else if (state.phase === 'investigate' && allDone(state, 'investigation')) {
       resolveScans(state, missions);
-      state.lastEvent = { kind: 'scan', label: state.fundedScans.map((index) => missionForRound(state, missions).tests[index]?.name).filter(Boolean).join(' + '), startedAt: Date.now(), id: `${state.round}-${Date.now()}` };
+      const mission = missionForRound(state, missions);
+      state.lastEvent = { kind: 'scan', label: state.fundedScans.map((index) => mission.tests[index]?.name).filter(Boolean).join(' + '), scans: state.fundedScans.map((index) => ({ name: mission.tests[index]?.name, evidence: mission.tests[index]?.evidence })), startedAt: Date.now(), id: `${state.round}-${Date.now()}` };
       state.phase = 'predict';
       state.players.forEach((player) => { player.answer = null; player.confidence = null; });
     } else if (state.phase === 'predict' && allDone(state, 'answer')) {
       state.phase = 'reveal';
       resolveRound(state, missions);
-      state.lastEvent = { kind: 'finding', startedAt: Date.now(), id: `${state.round}-${Date.now()}` };
+      const mission = missionForRound(state, missions);
+      state.lastEvent = { kind: 'finding', conclusion: state.lastResult.crewAnswer === null ? 'No majority conclusion' : mission.answers[state.lastResult.crewAnswer], correct: state.lastResult.crewWon, evidence: (state.lastResult.used || []).map((index) => ({ name: mission.tests[index]?.name, evidence: mission.tests[index]?.evidence })), startedAt: Date.now(), id: `${state.round}-${Date.now()}` };
     }
   }
 

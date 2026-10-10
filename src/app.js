@@ -1,53 +1,500 @@
-import { missions } from './content/missions.js';
-import { allDone, publicState, resolveRound } from './game/rules.js';
+import { buildExpeditionSequence, buildTargetMission, missionForRound, missions } from './content/missions.js';
+import { allDone, expeditionOutcome, majorityReached, publicState, RESEARCH_BUDGET, resolveRound, resolveScans } from './game/rules.js';
+import { sceneMarkup } from './game/scene.js';
+import { esc } from './game/text.js';
 
 (() => {
+  const $ = (selector) => document.querySelector(selector);
+  const home = $('#homeView');
+  const game = $('#gameView');
+  const toastEl = $('#toast');
+  let peer = null;
+  let host = false;
+  let myId = null;
+  let hostPeerId = null;
+  let conn = null;
+  let room = '';
+  let state = null;
+  let localPick = null;
+  let localAnswer = null;
+  let localConfidence = 2;
+  let localLocked = false;
+  let localPhase = '';
+  let localHotspot = null;
+  let busy = false;
+  let sceneRoot = null;
+  let localSceneReady = false;
+  let targetDataPromise = null;
 
-    const $=s=>document.querySelector(s), home=$('#homeView'), game=$('#gameView'), toastEl=$('#toast');
-    let peer=null, host=false, myId=null, hostPeerId=null, conn=null, room='', state=null, localPick=null, localAnswer=null, localLocked=false, localPhase='', busy=false;
-    const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    function toast(msg){toastEl.textContent=msg;toastEl.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>toastEl.classList.remove('show'),2600)}
-    function playerName(){const n=$('#playerName').value.trim();if(!n){toast('Choose a callsign first.');$('#playerName').focus();return null}return n.slice(0,18)}
-    function setBusy(v){busy=v;$('#hostBtn').disabled=v;$('#showJoinBtn').disabled=v;$('#joinBtn').disabled=v}
-    function showGame(){home.classList.add('hidden');game.classList.remove('hidden');render()}
-    function showHome(){game.classList.add('hidden');home.classList.remove('hidden')}
-    function newRoom(){return Array.from(crypto.getRandomValues(new Uint8Array(6)),x=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[x%32]).join('')}
+  function fetchMissionTarget() {
+    return fetch('/api/mission', { signal: AbortSignal.timeout(6500) })
+      .then((response) => response.ok ? response : null)
+      .catch(() => null);
+  }
 
-    function broadcast(){if(!host)return;const snap=publicState(state);Object.values(state.connections).forEach(c=>{if(c&&c.open)c.send({type:'state',state:snap})});render()}
-
-    function hostAction(id,action,value){if(!host||!state)return;const p=state.players.find(x=>x.id===id&&x.connected);if(!p)return;
-      if(action==='investigate'&&state.phase==='investigate'&&Number.isInteger(value)&&value>=0&&value<3){p.investigation=value;if(allDone(state,'investigation')){state.phase='predict';state.players.forEach(x=>x.answer=null)}}
-      if(action==='predict'&&state.phase==='predict'&&Number.isInteger(value)&&value>=0&&value<3){p.answer=value;if(allDone(state,'answer')){state.phase='reveal';resolveRound(state,missions)}}
-      broadcast();
+  function shuffledIndices(length) {
+    const order = Array.from({ length }, (_, index) => index);
+    for (let index = order.length - 1; index > 0; index -= 1) {
+      const swap = Math.floor(Math.random() * (index + 1));
+      [order[index], order[swap]] = [order[swap], order[index]];
     }
+    return order;
+  }
 
-    function nextRound(){if(!host)return;if(state.round>=missions.length-1){state.phase='finished'}else{state.round++;state.phase='investigate';state.players.forEach(p=>{p.investigation=null;p.answer=null;p.roundPoints=0})}state.lastResult=null;broadcast()}
-    function sendAction(type,value){if(host)hostAction(myId,type,value);else if(conn?.open)conn.send({type:'action',playerId:myId,action:type,value});else toast('Connection lost. Rejoin the room to continue.')}
-    function startMission(){if(!host)return;if(state.players.filter(p=>p.connected).length<2){toast('Invite at least one more researcher.');return}state.phase='investigate';state.round=0;state.teamScore=0;state.lastResult=null;state.players.forEach(p=>{p.score=0;p.investigation=null;p.answer=null;p.roundPoints=0});broadcast()}
-    function bindConnection(c){state.connections[c.peer]=c;c.on('data',msg=>{if(msg?.type==='join'&&host){if(state.phase!=='lobby'){c.send({type:'rejected',reason:'This mission has already launched.'});return}const existing=state.players.find(p=>p.id===msg.playerId);if(existing){existing.connected=true;existing.name=String(msg.name||'Researcher').slice(0,18);existing.peerId=c.peer}else if(state.players.length<8){state.players.push({id:msg.playerId,peerId:c.peer,name:String(msg.name||'Researcher').slice(0,18),host:false,connected:true,score:0,investigation:null,answer:null,roundPoints:0})}else{c.send({type:'rejected',reason:'This crew is full.'});return}c.send({type:'welcome',myId:msg.playerId});broadcast()}else if(msg?.type==='action'&&host){hostAction(msg.playerId,msg.action,msg.value)}});
-      c.on('close',()=>{delete state.connections[c.peer];if(host){const p=state.players.find(x=>x.peerId===c.peer);if(p){p.connected=false;broadcast()}}});c.on('error',()=>toast('A crew connection dropped.'));
+  function toast(message) {
+    toastEl.textContent = message;
+    toastEl.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toastEl.classList.remove('show'), 2600);
+  }
+
+  function playerName() {
+    const name = $('#playerName').value.trim();
+    if (!name) {
+      toast('Choose a callsign first.');
+      $('#playerName').focus();
+      return null;
     }
-    function hostRoom(){const name=playerName();if(!name)return;if(!window.Peer){toast('The connection service did not load. Refresh and try again.');return}setBusy(true);host=true;room=newRoom();peer=new Peer('cp-'+room.toLowerCase());peer.on('open',id=>{myId='host-'+id;hostPeerId=id;state={room,phase:'lobby',round:0,teamScore:0,players:[{id:myId,name,host:true,connected:true,score:0,investigation:null,answer:null,roundPoints:0}],connections:{},lastResult:null};peer.on('connection',bindConnection);setBusy(false);showGame()});peer.on('error',err=>{setBusy(false);if(err.type==='unavailable-id'){peer.destroy();host=false;hostRoom()}else toast('Could not open a room: '+err.type)});}
-    function joinRoom(){const name=playerName();if(!name)return;room=$('#roomCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');if(room.length!==6){toast('Enter the six-letter room code.');return}if(!window.Peer){toast('The connection service did not load. Refresh and try again.');return}setBusy(true);host=false;peer=new Peer();peer.on('open',id=>{myId=sessionStorage.getItem('cp-player-'+room)||'p-'+id;sessionStorage.setItem('cp-player-'+room,myId);hostPeerId='cp-'+room.toLowerCase();conn=peer.connect(hostPeerId,{reliable:true});conn.on('open',()=>conn.send({type:'join',playerId:myId,name}));conn.on('data',msg=>{if(msg?.type==='state'){const key=msg.state.round+':'+msg.state.phase;if(key!==localPhase){localPhase=key;localPick=null;localAnswer=null;localLocked=false}state=msg.state;state.connections={};setBusy(false);showGame()}else if(msg?.type==='welcome'){myId=msg.myId}else if(msg?.type==='rejected'){setBusy(false);toast(msg.reason);conn.close();peer.destroy();showHome()}});conn.on('error',()=>{setBusy(false);toast('Could not reach that room. Check the code and try again.')});conn.on('close',()=>toast('Host connection ended.'))});peer.on('error',err=>{setBusy(false);toast(err.type==='peer-unavailable'?'Room not found. Check the code and try again.':'Connection error: '+err.type)});}
-    function copyRoom(){navigator.clipboard?.writeText(room).then(()=>toast('Room code copied.')).catch(()=>toast('Room code: '+room))}
-    function render(){if(!state)return;const phaseKey=state.round+':'+state.phase;if(phaseKey!==localPhase){localPhase=phaseKey;localPick=null;localAnswer=null;localLocked=false}const me=state.players.find(p=>p.id===myId);const m=missions[state.round]||missions[0];const active=state.players.filter(p=>p.connected);const isHost=host;
-      const pill=state.phase==='lobby'?'CREW ASSEMBLY':state.phase==='investigate'?'INVESTIGATION':state.phase==='predict'?'HYPOTHESIS':state.phase==='reveal'?'DEBRIEF':'MISSION COMPLETE';
-      let content='';
-      if(state.phase==='lobby')content=`<div class="card-kicker">Awaiting launch authorization</div><h1 class="mission-title">Crew assembly</h1><p class="mission-brief">Share the room code with your crew. Once at least two researchers are aboard, launch the five-mission expedition.</p><div class="submit-row">${isHost?'<button id="startBtn" class="btn btn-primary">Launch expedition ↗</button>':'<span class="hint waiting-dots">Waiting for the host to launch</span>'}</div>`;
-      else if(state.phase==='investigate')content=`<div class="card-kicker">MISSION ${String(state.round+1).padStart(2,'0')} / ${m.tag}</div><h1 class="mission-title">${m.title}</h1><p class="mission-brief">${m.brief}</p><div class="phase-pill">Choose an investigation</div><p class="hint">Your choice stays private until the crew has locked in. Pick the test that would most reduce uncertainty.</p><div class="choice-grid">${m.tests.map((t,i)=>`<button class="choice ${localPick===i?'selected':''}" data-pick="${i}" ${localLocked?'disabled':''}><span class="choice-icon">${t.icon}</span><strong>${esc(t.name)}</strong><small>${esc(t.desc)}</small></button>`).join('')}</div><div class="submit-row"><button id="lockInvestigation" class="btn btn-primary" ${localPick===null||localLocked?'disabled':''}>Lock investigation</button><span class="hint">${localLocked?'Locked — awaiting crew':'Choose one test'}</span></div>`;
-      else if(state.phase==='predict'){
-        const chosen=[...new Set(active.map(p=>p.investigation).filter(x=>x!==null))];
-        const evidence=chosen.map(i=>`<div class="evidence"><span class="tag">${esc(m.tests[i].name)}</span>${esc(m.tests[i].evidence)}</div>`).join('');
-        content=`<div class="card-kicker">MISSION ${String(state.round+1).padStart(2,'0')} / ${m.tag}</div><h1 class="mission-title">What does the evidence say?</h1><p class="mission-brief">Your crew uncovered these findings. Make your best interpretation; a careful call beats a lucky guess.</p><div class="evidence-strip">${evidence}</div><div class="phase-pill">Lock your hypothesis</div><div class="choice-grid">${m.answers.map((a,i)=>`<button class="choice ${localAnswer===i?'selected':''}" data-answer="${i}" ${localLocked?'disabled':''}><span class="choice-icon">${['◉','◈','✧'][i]}</span><strong>${esc(a)}</strong><small>Interpret the evidence</small></button>`).join('')}</div><div class="submit-row"><button id="lockAnswer" class="btn btn-primary" ${localAnswer===null||localLocked?'disabled':''}>Lock hypothesis</button><span class="hint">${localLocked?'Locked — awaiting crew':'Choose one interpretation'}</span></div>`;
-      }else if(state.phase==='reveal'){
-        const res=state.lastResult||{correctVotes:0,total:active.length,used:[]};const evidence=res.used.map(i=>`<div class="evidence"><span class="tag">${esc(m.tests[i].name)}</span>${esc(m.tests[i].evidence)}</div>`).join('');
-        const sorted=[...state.players].sort((a,b)=>b.score-a.score);content=`<div class="card-kicker">MISSION ${String(state.round+1).padStart(2,'0')} DEBRIEF / ${m.tag}</div><h1 class="mission-title">${m.title}</h1><div class="result-box"><h3>${res.crewWon?'Crew consensus achieved':'The signal stays strange'}</h3><p><b>${esc(m.answers[m.correct])}</b> — ${esc(m.why)}</p><p class="result-score">${res.correctVotes} OF ${res.total} CORRECT · +${state.teamScore} TOTAL CREW RESEARCH</p></div><div class="evidence-strip">${evidence}</div><div class="leaderboard">${sorted.map((p,i)=>`<div class="leader"><span class="rank">${String(i+1).padStart(2,'0')}</span><span style="flex:1">${esc(p.name)} ${p.id===myId?'(you)':''}</span><span class="score">${p.score} RP</span></div>`).join('')}</div><div class="submit-row">${isHost?`<button id="nextBtn" class="btn btn-primary">${state.round===missions.length-1?'Final results ↗':'Next mission ↗'}</button>`:'<span class="hint waiting-dots">Waiting for the host</span>'}</div>`;
-      }else{
-        const sorted=[...state.players].sort((a,b)=>b.score-a.score);content=`<div class="card-kicker">TRANSMISSION COMPLETE</div><h1 class="mission-title">The unknown, a little less unknown.</h1><p class="mission-brief">Five mysteries investigated. Your crew earned <span class="result-score">${state.teamScore} research points</span> together.</p><div class="leaderboard">${sorted.map((p,i)=>`<div class="leader"><span class="rank">${String(i+1).padStart(2,'0')}</span><span style="flex:1">${esc(p.name)} ${i===0?'✦':''}</span><span class="score">${p.score} RP</span></div>`).join('')}</div><div class="result-box"><h3>${sorted[0]?.name===me?.name?'You led the research.':'The research belongs to the crew.'}</h3><p>Curiosity is not the same as certainty. Keep asking better questions.</p></div><div class="submit-row">${isHost?'<button id="restartBtn" class="btn btn-primary">Run it again ↗</button>':''}<button id="leaveBtn" class="btn btn-quiet">Leave mission</button></div>`;
+    return name.slice(0, 18);
+  }
+
+  function setBusy(value) {
+    busy = value;
+    $('#hostBtn').disabled = value;
+    $('#showJoinBtn').disabled = value;
+    $('#joinBtn').disabled = value;
+  }
+
+  function showGame() {
+    home.classList.add('hidden');
+    game.classList.remove('hidden');
+    render();
+  }
+
+  function newRoom() {
+    return Array.from(crypto.getRandomValues(new Uint8Array(6)), (byte) => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[byte % 32]).join('');
+  }
+
+  function broadcast() {
+    if (!host || !state) return;
+    const snapshot = publicState(state);
+    Object.values(state.connections).forEach((connection) => {
+      if (connection?.open) connection.send({ type: 'state', state: snapshot });
+    });
+    render();
+  }
+
+  function advanceIfReady() {
+    if (!state) return;
+    if (state.phase === 'explore' && majorityReached(state, 'readyExplore')) {
+      state.phase = 'investigate';
+      state.players.forEach((player) => { player.investigation = null; });
+    } else if (state.phase === 'investigate' && allDone(state, 'investigation')) {
+      resolveScans(state, missions);
+      const mission = missionForRound(state, missions);
+      state.lastEvent = { kind: 'scan', label: state.fundedScans.map((index) => mission.tests[index]?.name).filter(Boolean).join(' + '), scans: state.fundedScans.map((index) => ({ name: mission.tests[index]?.name, evidence: mission.tests[index]?.evidence })), startedAt: Date.now(), id: `${state.round}-${Date.now()}` };
+      state.phase = 'predict';
+      state.players.forEach((player) => { player.answer = null; player.confidence = null; });
+    } else if (state.phase === 'predict' && allDone(state, 'answer')) {
+      state.phase = 'reveal';
+      resolveRound(state, missions);
+      const mission = missionForRound(state, missions);
+      state.lastEvent = { kind: 'finding', conclusion: state.lastResult.crewAnswer === null ? 'No majority conclusion' : mission.answers[state.lastResult.crewAnswer], correct: state.lastResult.crewWon, evidence: (state.lastResult.used || []).map((index) => ({ name: mission.tests[index]?.name, evidence: mission.tests[index]?.evidence })), startedAt: Date.now(), id: `${state.round}-${Date.now()}` };
+    }
+  }
+
+  function hostAction(id, action, value) {
+    if (!host || !state) return;
+    const player = state.players.find((candidate) => candidate.id === id && candidate.connected);
+    if (!player) return;
+    const mission = missionForRound(state, missions);
+
+    if (action === 'inspect' && state.phase === 'explore' && mission.hotspots.some((point) => point.id === value)) {
+      if (!state.discoveries.includes(value)) {
+        state.discoveries.push(value);
+        state.lastEvent = { kind: 'inspection', pointId: value, startedAt: Date.now(), id: `${state.round}-${Date.now()}` };
       }
-      const roster=state.players.map(p=>`<div class="player-row"><div class="avatar">${esc((p.name||'?').slice(0,1).toUpperCase())}</div><span class="player-name">${esc(p.name)} ${p.id===myId?'(you)':''}</span>${p.host?'<span class="host-tag">HOST</span>':''}${state.phase!=='lobby'?`<span class="score">${p.score} RP</span>`:''}</div>`).join('');
-      game.innerHTML=`<div class="game-layout"><main class="game-main"><div class="room-head"><div><div class="card-kicker">MISSION ROOM</div><div class="room-id">${esc(room||state.room)}</div></div><div class="round-meta"><span class="phase-pill">${pill}</span><br/>${state.phase==='lobby'?'READY WHEN YOU ARE':state.phase==='finished'?'FIELD REPORT COMPLETE':`MISSION ${String(state.round+1).padStart(2,'0')} OF 05`}</div></div>${content}</main><aside class="sidebar"><div class="sidebar-card"><div class="roster-title"><span>Research crew</span><span>${active.length}/8</span></div>${roster}<div class="progress"><span style="width:${state.phase==='lobby'?0:state.phase==='finished'?100:((state.round+(state.phase==='reveal'?1:0))/missions.length)*100}%"></span></div><div class="sidebar-note">${state.phase==='lobby'?'Invite 1–7 friends with the room code.':`Crew research total: ${state.teamScore} RP`}</div>${isHost&&state.phase==='lobby'?'<button id="copyCode" class="copy-code">COPY ROOM CODE ↗</button>':''}</div><div class="sidebar-card"><div class="card-kicker">FIELD NOTES</div><div class="sidebar-note">There are no trick questions. Use the evidence, stay curious, and be willing to change your mind.</div></div></aside></div>`;
-      $('#startBtn')?.addEventListener('click',startMission);$('#copyCode')?.addEventListener('click',copyRoom);$('#lockInvestigation')?.addEventListener('click',()=>{if(localPick!==null&&!localLocked){localLocked=true;sendAction('investigate',localPick)}});$('#lockAnswer')?.addEventListener('click',()=>{if(localAnswer!==null&&!localLocked){localLocked=true;sendAction('predict',localAnswer)}});$('#nextBtn')?.addEventListener('click',nextRound);$('#restartBtn')?.addEventListener('click',()=>{state.phase='lobby';state.round=0;state.teamScore=0;state.lastResult=null;state.players.forEach(p=>{p.score=0;p.investigation=null;p.answer=null;p.roundPoints=0});broadcast()});$('#leaveBtn')?.addEventListener('click',()=>{peer?.destroy();location.reload()});game.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>{if(localLocked)return;localPick=Number(b.dataset.pick);render()}));game.querySelectorAll('[data-answer]').forEach(b=>b.addEventListener('click',()=>{if(localLocked)return;localAnswer=Number(b.dataset.answer);render()}));
     }
-    $('#hostBtn').addEventListener('click',hostRoom);$('#showJoinBtn').addEventListener('click',()=>{$('#joinFields').classList.toggle('hidden');if(!$('#joinFields').classList.contains('hidden'))$('#roomCode').focus()});$('#joinBtn').addEventListener('click',joinRoom);$('#roomCode').addEventListener('input',e=>e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''));$('#roomCode').addEventListener('keydown',e=>{if(e.key==='Enter')joinRoom()});
-  })();
+    if (action === 'readyExplore' && state.phase === 'explore') player.readyExplore = true;
+    if (action === 'investigate' && state.phase === 'investigate' && Number.isInteger(value) && value >= 0 && value < mission.tests.length) {
+      player.investigation = value;
+    }
+    if (action === 'predict' && state.phase === 'predict' && Number.isInteger(value?.answer) && value.answer >= 0 && value.answer < mission.answers.length && Number.isInteger(value?.confidence) && value.confidence >= 1 && value.confidence <= 3) {
+      player.answer = value.answer;
+      player.confidence = value.confidence;
+    }
+    advanceIfReady();
+    broadcast();
+  }
+
+  function sendAction(action, value) {
+    if (host) hostAction(myId, action, value);
+    else if (conn?.open) conn.send({ type: 'action', playerId: myId, action, value });
+    else toast('Connection lost. Rejoin the room to continue.');
+  }
+
+  function resetMissionPlayers() {
+    state.players.forEach((player) => {
+      player.readyExplore = false;
+      player.investigation = null;
+      player.answer = null;
+      player.confidence = null;
+    });
+    state.discoveries = [];
+    state.fundedScans = [];
+    state.scanVotes = {};
+    state.energyUsed = 0;
+  }
+
+  async function startMission() {
+    if (!host) return;
+    if (state.players.filter((player) => player.connected).length < 2) {
+      toast('Invite at least one more researcher.');
+      return;
+    }
+    const launch = $('#startBtn');
+    if (launch) launch.disabled = true;
+    toast('Preparing a fresh science target…');
+    let liveTarget = null;
+    try {
+      const request = targetDataPromise || fetchMissionTarget();
+      targetDataPromise = fetchMissionTarget();
+      const response = await request;
+      if (response?.ok) liveTarget = (await response.json()).target;
+    } catch { /* Authored mission briefings keep the expedition playable offline. */ }
+    state.dynamicTargetMission = liveTarget ? buildTargetMission(liveTarget) : null;
+    state.round = 0;
+    state.teamScore = 0;
+    state.lastResult = null;
+    state.journeyLog = [];
+    state.missionVariants = missions.map((mission) => mission.variants?.length ? crypto.getRandomValues(new Uint8Array(1))[0] % mission.variants.length : 0);
+    state.missionOrder = shuffledIndices(missions.length);
+    state.missionSequence = buildExpeditionSequence(state, missions);
+    resetMissionPlayers();
+    state.phase = 'explore';
+    broadcast();
+  }
+
+  function nextRound() {
+    if (!host) return;
+    if (state.round >= missions.length - 1) {
+      state.phase = 'finished';
+    } else {
+      state.round += 1;
+      resetMissionPlayers();
+      state.phase = 'explore';
+    }
+    state.lastResult = null;
+    broadcast();
+  }
+
+  function restartMission() {
+    if (!host) return;
+    state.round = 0;
+    state.phase = 'lobby';
+    state.teamScore = 0;
+    state.lastResult = null;
+    state.journeyLog = [];
+    state.missionVariants = null;
+    state.missionSequence = null;
+    resetMissionPlayers();
+    state.players.forEach((player) => { player.score = 0; });
+    targetDataPromise = fetchMissionTarget();
+    broadcast();
+  }
+
+  function bindConnection(connection) {
+    state.connections[connection.peer] = connection;
+    connection.on('data', (message) => {
+      if (message?.type === 'join' && host) {
+        if (state.phase !== 'lobby') {
+          connection.send({ type: 'rejected', reason: 'This mission has already launched.' });
+          return;
+        }
+        const existing = state.players.find((player) => player.id === message.playerId);
+        if (existing) {
+          existing.connected = true;
+          existing.name = String(message.name || 'Researcher').slice(0, 18);
+          existing.peerId = connection.peer;
+        } else if (state.players.length < 8) {
+          state.players.push({ id: message.playerId, peerId: connection.peer, name: String(message.name || 'Researcher').slice(0, 18), host: false, connected: true, score: 0, readyExplore: false, investigation: null, answer: null, confidence: null });
+        } else {
+          connection.send({ type: 'rejected', reason: 'This crew is full.' });
+          return;
+        }
+        connection.send({ type: 'welcome', myId: message.playerId });
+        broadcast();
+      } else if (message?.type === 'action' && host) {
+        hostAction(message.playerId, message.action, message.value);
+      }
+    });
+    connection.on('close', () => {
+      delete state.connections[connection.peer];
+      if (!host) return;
+      const player = state.players.find((candidate) => candidate.peerId === connection.peer);
+      if (player) {
+        player.connected = false;
+        advanceIfReady();
+        broadcast();
+      }
+    });
+    connection.on('error', () => toast('A crew connection dropped.'));
+  }
+
+  function hostRoom() {
+    const name = playerName();
+    if (!name) return;
+    if (!window.Peer) {
+      toast('The connection service did not load. Refresh and try again.');
+      return;
+    }
+    setBusy(true);
+    host = true;
+    room = newRoom();
+    peer = new Peer(`cp-${room.toLowerCase()}`);
+    peer.on('open', (id) => {
+      targetDataPromise = fetchMissionTarget();
+      myId = `host-${id}`;
+      hostPeerId = id;
+      state = { room, phase: 'lobby', round: 0, teamScore: 0, journeyLog: [], players: [{ id: myId, name, host: true, connected: true, score: 0, readyExplore: false, investigation: null, answer: null, confidence: null }], connections: {}, discoveries: [], fundedScans: [], scanVotes: {}, energyUsed: 0, lastResult: null };
+      peer.on('connection', bindConnection);
+      setBusy(false);
+      showGame();
+    });
+    peer.on('error', (error) => {
+      setBusy(false);
+      if (error.type === 'unavailable-id') {
+        peer.destroy();
+        host = false;
+        hostRoom();
+      } else toast(`Could not open a room: ${error.type}`);
+    });
+  }
+
+  function joinRoom() {
+    const name = playerName();
+    if (!name) return;
+    room = $('#roomCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (room.length !== 6) {
+      toast('Enter the six-letter room code.');
+      return;
+    }
+    if (!window.Peer) {
+      toast('The connection service did not load. Refresh and try again.');
+      return;
+    }
+    setBusy(true);
+    host = false;
+    peer = new Peer();
+    peer.on('open', (id) => {
+      myId = sessionStorage.getItem(`cp-player-${room}`) || `p-${id}`;
+      sessionStorage.setItem(`cp-player-${room}`, myId);
+      hostPeerId = `cp-${room.toLowerCase()}`;
+      conn = peer.connect(hostPeerId, { reliable: true });
+      conn.on('open', () => conn.send({ type: 'join', playerId: myId, name }));
+      conn.on('data', (message) => {
+        if (message?.type === 'state') {
+          state = message.state;
+          state.connections = {};
+          setBusy(false);
+          showGame();
+        } else if (message?.type === 'welcome') {
+          myId = message.myId;
+        } else if (message?.type === 'rejected') {
+          setBusy(false);
+          toast(message.reason);
+          conn.close();
+          peer.destroy();
+          home.classList.remove('hidden');
+          game.classList.add('hidden');
+        }
+      });
+      conn.on('error', () => {
+        setBusy(false);
+        toast('Could not reach that room. Check the code and try again.');
+      });
+      conn.on('close', () => toast('Host connection ended.'));
+    });
+    peer.on('error', (error) => {
+      setBusy(false);
+      toast(error.type === 'peer-unavailable' ? 'Room not found. Check the code and try again.' : `Connection error: ${error.type}`);
+    });
+  }
+
+  function copyRoom() {
+    navigator.clipboard?.writeText(room).then(() => toast('Room code copied.')).catch(() => toast(`Room code: ${room}`));
+  }
+
+  function readyCount(key) {
+    return state.players.filter((player) => player.connected && (host ? player[key] : key === 'readyExplore' ? player[key] : key === 'investigation' ? player.investigationLocked : player.hypothesisLocked)).length;
+  }
+
+  function evidenceCards(mission, indices) {
+    return indices.map((index) => {
+      const test = mission.tests[index];
+      return `<div class="evidence"><span class="tag">${esc(test.name)} · ${test.cost} ENERGY</span>${esc(test.evidence)}</div>`;
+    }).join('');
+  }
+
+  function voteTally(mission, votes) {
+    const cast = Object.values(votes || {}).reduce((sum, count) => sum + count, 0);
+    if (!cast) return '';
+    const rows = mission.tests.map((test, index) => ({ name: test.name, count: votes[index] || 0 }))
+      .filter((row) => row.count > 0)
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+    return `<div class="vote-tally"><div class="vote-tally-title">CREW SCAN VOTE · ${cast} CAST</div>${rows.map((row) => { const width = Math.round(row.count / cast * 100); return `<div class="vote-tally-row"><span>${esc(row.name)}</span><div><i style="--vote-width:${width}%;width:${width}%"></i></div><b>${row.count}</b></div>`; }).join('')}</div>`;
+  }
+
+  function discoveryCards(mission) {
+    return (state.discoveries || []).map((id) => mission.hotspots.find((point) => point.id === id)).filter(Boolean).map((point) => (
+      `<button class="observation-card ${localHotspot === point.id ? 'active' : ''}" type="button" data-review-hotspot="${esc(point.id)}"><span class="observation-icon">${point.icon}</span><span><strong>${esc(point.title)}</strong><small>${esc(point.text)}</small></span><span class="observation-check">✓</span></button>`
+    )).join('');
+  }
+
+  function journeyTrack(log = state?.journeyLog || [], final = false) {
+    return `<div class="journey-track ${final ? 'journey-track-final' : ''}" aria-label="Expedition route">${missions.map((_, index) => {
+      const mission = missionForRound({ ...state, round: index }, missions);
+      const entry = log[index];
+      const current = !final && state?.round === index && state?.phase !== 'lobby' && state?.phase !== 'finished';
+      return `<div class="journey-stop ${entry ? (entry.correct ? 'complete' : 'uncertain') : ''} ${current ? 'current' : ''}"><span class="journey-node">${entry ? (entry.correct ? '✓' : '·') : String(index + 1).padStart(2, '0')}</span><span class="journey-name">${esc(mission.location || mission.theme.planet)}</span>${entry ? `<small>${entry.points >= 0 ? '+' : ''}${entry.points} RP</small>` : ''}</div>`;
+    }).join('')}</div>`;
+  }
+
+  function render() {
+    if (!state) return;
+    const phaseKey = `${state.round}:${state.phase}`;
+    if (phaseKey !== localPhase) {
+      localPhase = phaseKey;
+      localPick = null;
+      localAnswer = null;
+      localConfidence = 2;
+      localLocked = false;
+    }
+    const me = state.players.find((player) => player.id === myId);
+    const mission = missionForRound(state, missions);
+    const discovered = state.discoveries || [];
+    const active = state.players.filter((player) => player.connected);
+    const isHost = host;
+    const phaseLabels = { lobby: 'CREW ASSEMBLY', explore: 'FIRST-PERSON SURVEY', investigate: 'SCAN VOTE', predict: 'CREW HYPOTHESIS', reveal: 'MISSION DEBRIEF', finished: 'EXPEDITION COMPLETE' };
+    const pill = phaseLabels[state.phase] || 'MISSION CONTROL';
+    let content = '';
+
+    if (state.phase === 'lobby') {
+      content = `<div class="card-kicker">Awaiting launch authorization</div><h1 class="mission-title">Crew assembly</h1><p class="mission-brief">Share the room code with your crew. Travel through five scientific frontiers, pool evidence, and build a shared expedition field report.</p>${journeyTrack()}<div class="lobby-preview"><span>01 · SURVEY</span><b>→</b><span>02 · VOTE ON SCANS</span><b>→</b><span>03 · INTERPRET</span></div><div class="submit-row">${isHost ? '<button id="startBtn" class="btn btn-primary">Launch expedition ↗</button>' : '<span class="hint waiting-dots">Waiting for the host to launch</span>'}</div>`;
+    } else if (state.phase === 'explore') {
+      const selected = mission.hotspots.find((point) => point.id === localHotspot && discovered.includes(point.id)) || mission.hotspots.find((point) => point.id === discovered.at(-1));
+      const ready = readyCount('readyExplore');
+      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} / ${mission.tag}</div><h1 class="mission-title">${esc(mission.title)}</h1><p class="mission-brief">${esc(mission.brief)}</p>${mission.source ? `<p class="source-note">LIVE TARGET DATA · <a href="${esc(mission.sourceUrl)}" target="_blank" rel="noreferrer">${esc(mission.source)}</a> · mission events are simulated</p>` : ''}${journeyTrack()}<div class="scene-instruction"><span class="instruction-orb">⌖</span><span><strong>Survey the scene</strong><small>Tap a glowing instrument to inspect it. Each field note narrows the possibilities. When ready, vote to move into the measurement phase.</small></span><span class="scene-counter">${discovered.length}/${mission.hotspots.length} FOUND</span></div>${sceneMarkup(mission, discovered, localHotspot, state.lastEvent)}<div class="observation-area"><div class="observation-head"><span>CREW OBSERVATIONS</span><span>${discovered.length} / ${mission.hotspots.length}</span></div>${selected ? `<div class="focused-observation"><div class="focused-kicker">${esc(selected.title)}</div><p>${esc(selected.text)}</p></div>` : '<div class="empty-observation">Start by selecting a labeled instrument in the 3D scene. Its field note becomes visible to the whole crew.</div>'}<div class="observation-list">${discoveryCards(mission)}</div></div><div class="submit-row"><button id="readyExplore" class="btn btn-primary" ${localLocked ? 'disabled' : ''}>${localLocked ? 'Ready to scan ✓' : 'Ready to scan ↗'}</button><span class="hint">${ready}/${active.length} ready · a crew majority advances</span></div>`;
+    } else if (state.phase === 'investigate') {
+      const locked = readyCount('investigation');
+      const budget = Array.from({ length: RESEARCH_BUDGET }, (_, index) => `<i class="energy-cell ${index < RESEARCH_BUDGET ? 'charged' : ''}"></i>`).join('');
+      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} / ${mission.tag}</div><h1 class="mission-title">Choose the next measurements.</h1><p class="mission-brief">The crew has ${RESEARCH_BUDGET} shared energy. Each researcher privately votes for one scan. The most popular distinct scans run in vote order while energy allows.</p>${sceneMarkup(mission, discovered, null, state.lastEvent, false)}<div class="decision-guide"><strong>YOUR TASK</strong><span>Pick the scan that best separates the competing explanations. The cards explain what each scan measures; evidence appears after the crew's votes resolve.</span></div><div class="energy-panel"><div><span class="panel-label">SHARED RESEARCH ENERGY</span><strong>${RESEARCH_BUDGET} UNITS</strong></div><div class="energy-cells">${budget}</div><small>Ties use the scan order shown below.</small></div>${discovered.length ? `<div class="evidence-strip">${discoveryCards(mission)}</div>` : '<div class="empty-observation">No free observations collected. Your instruments can still investigate the anomaly.</div>'}<div class="choice-grid scan-grid">${mission.tests.map((test, index) => `<button class="choice scan-choice ${localPick === index ? 'selected' : ''}" data-pick="${index}" ${localLocked || !localSceneReady ? 'disabled' : ''}><span class="choice-icon">${test.icon}</span><span class="scan-cost">${test.cost} ENERGY</span><strong>${esc(test.name)}</strong><small>${esc(test.desc)}</small></button>`).join('')}</div><div class="submit-row"><button id="lockScan" class="btn btn-primary" ${localPick === null || localLocked || !localSceneReady ? 'disabled' : ''}>${localLocked ? 'Vote locked ✓' : 'Lock scan vote'}</button><span class="hint">${locked}/${active.length} votes locked${localLocked ? ' · your vote is private' : ''}</span></div>`;
+    } else if (state.phase === 'predict') {
+      const locked = readyCount('answer');
+      const scans = evidenceCards(mission, state.fundedScans || []);
+      const observations = discoveryCards(mission);
+      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} / ${mission.tag}</div><h1 class="mission-title">What does the evidence support?</h1><p class="mission-brief">The crew spent ${state.energyUsed || 0} of ${RESEARCH_BUDGET} energy. Review the findings, then make a private call. A careful level of confidence is part of good science.</p>${sceneMarkup(mission, discovered, null, state.lastEvent, false)}<div class="decision-guide"><strong>YOUR TASK</strong><span>Compare each hypothesis with the observations and funded scans. Choose the explanation the evidence supports best; a cautious answer is valid when the evidence is incomplete.</span></div>${voteTally(mission, state.scanVotes)}<div class="evidence-strip">${scans || '<div class="empty-observation">No scans were funded this mission.</div>'}${observations}</div><div class="phase-pill">Choose your hypothesis</div><div class="choice-grid">${mission.answers.map((answer, index) => `<button class="choice answer-choice ${localAnswer === index ? 'selected' : ''}" data-answer="${index}" ${localLocked || !localSceneReady ? 'disabled' : ''}><span class="choice-icon">${['◉', '◈', '✧'][index]}</span><strong>${esc(answer)}</strong><small>Interpret the evidence</small></button>`).join('')}</div><div class="confidence-row"><span class="field-label">YOUR CONFIDENCE</span><div class="confidence-options">${[['1', 'Unsure'], ['2', 'Leaning'], ['3', 'High']].map(([value, label]) => `<button type="button" class="confidence ${localConfidence === Number(value) ? 'selected' : ''}" data-confidence="${value}" ${localLocked || !localSceneReady ? 'disabled' : ''}><b>${value}</b><span>${label}</span></button>`).join('')}</div></div><div class="submit-row"><button id="lockHypothesis" class="btn btn-primary" ${localAnswer === null || localLocked || !localSceneReady ? 'disabled' : ''}>${localLocked ? 'Hypothesis locked ✓' : 'Lock hypothesis'}</button><span class="hint">${locked}/${active.length} hypotheses locked</span></div>`;
+    } else if (state.phase === 'reveal') {
+      const result = state.lastResult || { correctVotes: 0, total: active.length, used: [], crewWon: false, roundPoints: 0, calibrationPoints: 0, scanPoints: 0, conclusionPoints: 0 };
+      const crewAnswer = mission.answers[result.crewAnswer] || 'No majority conclusion';
+      const answerBreakdown = Object.entries(result.answerVotes || {}).map(([index, count]) => ({ answer: mission.answers[Number(index)], count }))
+        .filter((row) => row.answer && row.count > 0).sort((a, b) => b.count - a.count)
+        .map((row) => `<span>${esc(row.answer)} · ${row.count}</span>`).join('');
+      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} DEBRIEF / ${mission.tag}</div><h1 class="mission-title">${esc(mission.title)}</h1>${sceneMarkup(mission, state.discoveries || [], null, state.lastEvent, false)}<div class="finding-banner"><span class="finding-icon">${result.crewWon ? '✦' : '⌁'}</span><span>${result.crewWon ? 'FINDING ADDED TO EXPEDITION LOG' : 'OPEN QUESTION ADDED TO EXPEDITION LOG'}</span></div><div class="result-box"><div class="result-seal">${result.crewWon ? '✓' : '∿'}</div><div><h3>${result.crewWon ? 'A strong crew finding' : 'The signal stays uncertain'}</h3><p><strong>Crew conclusion:</strong> ${esc(crewAnswer)}${result.crewWon ? ' · Correct' : ''}</p><div class="answer-votes">${answerBreakdown}</div><p>${esc(mission.why)}</p><p class="result-score">${result.correctVotes} OF ${result.total} RESEARCHERS CORRECT · ${result.roundPoints >= 0 ? '+' : ''}${result.roundPoints} CREW RP THIS MISSION</p></div></div>${journeyTrack()}<div class="score-breakdown"><div><span>Conclusion</span><b>${result.conclusionPoints >= 0 ? '+' : ''}${result.conclusionPoints} RP</b></div><div><span>Useful scans</span><b>+${result.scanPoints} RP</b></div><div><span>Confidence calibration</span><b>${result.calibrationPoints > 0 ? '+' : ''}${result.calibrationPoints} RP</b></div></div><div class="evidence-strip">${evidenceCards(mission, result.used || [])}${discoveryCards(mission)}</div><div class="crew-scoreline"><span>SHARED RESEARCH TOTAL</span><strong>${state.teamScore} RP</strong></div><div class="submit-row">${isHost ? `<button id="nextBtn" class="btn btn-primary">${state.round === missions.length - 1 ? 'Final expedition report ↗' : 'Continue expedition ↗'}</button>` : '<span class="hint waiting-dots">Waiting for the host</span>'}</div>`;
+    } else {
+      const outcome = expeditionOutcome(state.teamScore);
+      const log = state.journeyLog || [];
+      const summaries = log.map((entry, index) => `<div class="report-entry"><span class="report-index">${String(index + 1).padStart(2, '0')}</span><div><strong>${esc(entry.title)}</strong><small>${esc(entry.conclusion)} · ${entry.discoveries} observations · ${entry.scans.length} scans funded</small></div><b>${entry.points >= 0 ? '+' : ''}${entry.points} RP</b></div>`).join('');
+      content = `<div class="final-orbit"><div class="final-star">✦</div><div class="final-ring ring-one"></div><div class="final-ring ring-two"></div></div><div class="card-kicker">TRANSMISSION COMPLETE · FIVE MISSIONS</div><h1 class="mission-title">${esc(outcome.title)}</h1><p class="mission-brief">${esc(outcome.detail)}</p><div class="final-score"><span>EXPEDITION OUTCOME</span><strong>${state.teamScore}<small> RP</small></strong></div><section class="final-report"><h2>Expedition field report</h2><p>Your crew's observations and tests shaped this route through the unknown.</p>${journeyTrack(log, true)}<div class="report-list">${summaries}</div></section><div class="final-narrative"><h3>The unknown, a little less unknown.</h3><p>Good science grows through careful observation, useful tests, and conclusions that match the strength of the evidence. Your crew leaves a record the next expedition can build on.</p></div><div class="submit-row">${isHost ? '<button id="restartBtn" class="btn btn-primary">Start a new expedition ↗</button>' : ''}<button id="leaveBtn" class="btn btn-quiet">Leave mission</button></div>`;
+    }
+
+    const roster = state.players.map((player) => {
+      let badge = '';
+      if (state.phase === 'explore') badge = player.readyExplore ? 'READY' : 'SURVEYING';
+      if (state.phase === 'investigate') badge = (host ? player.investigation !== null : player.investigationLocked) ? 'VOTED' : 'CHOOSING';
+      if (state.phase === 'predict') badge = (host ? player.answer !== null : player.hypothesisLocked) ? 'LOCKED' : 'DECIDING';
+      return `<div class="player-row"><div class="avatar">${esc((player.name || '?').slice(0, 1).toUpperCase())}</div><span class="player-name">${esc(player.name)} ${player.id === myId ? '(you)' : ''}</span>${player.host ? '<span class="host-tag">HOST</span>' : ''}${state.phase !== 'lobby' ? `<span class="player-state">${badge}</span>` : ''}</div>`;
+    }).join('');
+    const missionProgress = state.phase === 'lobby' ? 0 : state.phase === 'finished' ? 100 : ((state.round + (state.phase === 'reveal' ? 1 : 0)) / missions.length) * 100;
+    const sideNote = state.phase === 'lobby' ? 'Invite 1–7 friends with the room code.' : `Shared research: ${state.teamScore} RP · ${RESEARCH_BUDGET} energy each mission`;
+    game.innerHTML = `<div class="game-layout"><main class="game-main phase-${state.phase}"><div class="room-head"><div><div class="card-kicker">MISSION ROOM</div><div class="room-id">${esc(room || state.room)}</div></div><div class="round-meta"><span class="phase-pill">${pill}</span><br/>${state.phase === 'lobby' ? 'READY WHEN YOU ARE' : state.phase === 'finished' ? 'FIELD REPORT COMPLETE' : `MISSION ${String(state.round + 1).padStart(2, '0')} OF 05`}</div></div>${content}</main><aside class="sidebar"><div class="sidebar-card"><div class="roster-title"><span>Research crew</span><span>${active.length}/8</span></div>${roster}<div class="progress"><span style="width:${missionProgress}%"></span></div><div class="sidebar-note">${sideNote}</div>${isHost && state.phase === 'lobby' ? '<button id="copyCode" class="copy-code">COPY ROOM CODE ↗</button>' : ''}</div><div class="sidebar-card mission-brief-card"><div class="card-kicker">FIELD NOTES</div><div class="sidebar-note">A discovery is a clue, not a verdict. Spend energy on evidence that can distinguish between competing explanations.</div><div class="crew-scoreline compact"><span>EXPEDITION SCORE</span><strong>${state.teamScore} RP</strong></div></div></aside></div>`;
+
+    $('#startBtn')?.addEventListener('click', startMission);
+    $('#copyCode')?.addEventListener('click', copyRoom);
+    $('#readyExplore')?.addEventListener('click', () => { localLocked = true; render(); sendAction('readyExplore'); });
+    $('#lockScan')?.addEventListener('click', () => {
+      if (localPick !== null && !localLocked) {
+        localLocked = true;
+        render();
+        sendAction('investigate', localPick);
+      }
+    });
+    $('#lockHypothesis')?.addEventListener('click', () => {
+      if (localAnswer !== null && !localLocked) {
+        localLocked = true;
+        render();
+        sendAction('predict', { answer: localAnswer, confidence: localConfidence });
+      }
+    });
+    $('#nextBtn')?.addEventListener('click', nextRound);
+    $('#restartBtn')?.addEventListener('click', restartMission);
+    $('#leaveBtn')?.addEventListener('click', () => { peer?.destroy(); location.reload(); });
+    game.querySelectorAll('[data-hotspot]').forEach((button) => button.addEventListener('click', () => {
+      localHotspot = button.dataset.hotspot;
+      if (!state.discoveries.includes(localHotspot)) sendAction('inspect', localHotspot);
+      else render();
+    }));
+    game.querySelectorAll('[data-review-hotspot]').forEach((button) => button.addEventListener('click', () => {
+      localHotspot = button.dataset.reviewHotspot;
+      render();
+    }));
+    game.querySelectorAll('[data-pick]').forEach((button) => button.addEventListener('click', () => {
+      if (localLocked) return;
+      localPick = Number(button.dataset.pick);
+      render();
+    }));
+    game.querySelectorAll('[data-answer]').forEach((button) => button.addEventListener('click', () => {
+      if (localLocked) return;
+      localAnswer = Number(button.dataset.answer);
+      render();
+    }));
+    game.querySelectorAll('[data-confidence]').forEach((button) => button.addEventListener('click', () => {
+      if (localLocked) return;
+      localConfidence = Number(button.dataset.confidence);
+      render();
+    }));
+
+    sceneRoot = game.querySelector('[data-scene-root]');
+    localSceneReady = false;
+    if (sceneRoot) {
+      const thisRoot = sceneRoot;
+      const unlockSceneActions = () => {
+        if (!thisRoot.isConnected) return;
+        localSceneReady = true;
+        thisRoot.querySelectorAll('[data-hotspot]').forEach((button) => { button.disabled = false; });
+        game.querySelectorAll('[data-pick],[data-answer],[data-confidence]').forEach((button) => { if (!localLocked) button.disabled = false; });
+        const lockScan = $('#lockScan'), lockHypothesis = $('#lockHypothesis');
+        if (lockScan && !localLocked) lockScan.disabled = localPick === null;
+        if (lockHypothesis && !localLocked) lockHypothesis.disabled = localAnswer === null;
+      };
+      import('./game/scene3d.js').then(({ prepareScene }) => prepareScene(thisRoot, mission, state.lastEvent)).then(unlockSceneActions).catch((error) => {
+        console.warn('3D scene could not initialize:', error);
+        if (!thisRoot.isConnected) return;
+        thisRoot.classList.add('scene-fallback');
+        thisRoot.querySelector('.scene-canvas')?.remove();
+        thisRoot.querySelector('[data-scene-loader]')?.classList.add('ready');
+        thisRoot.querySelector('[data-scene-loader] span').textContent = 'LOW-POWER VISUAL MODE · MISSION IS READY';
+        unlockSceneActions();
+      });
+    }
+  }
+
+  $('#hostBtn').addEventListener('click', hostRoom);
+  $('#showJoinBtn').addEventListener('click', () => {
+    $('#joinFields').classList.toggle('hidden');
+    if (!$('#joinFields').classList.contains('hidden')) $('#roomCode').focus();
+  });
+  $('#joinBtn').addEventListener('click', joinRoom);
+  $('#roomCode').addEventListener('input', (event) => { event.target.value = event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+  $('#roomCode').addEventListener('keydown', (event) => { if (event.key === 'Enter') joinRoom(); });
+})();

@@ -462,3 +462,46 @@ body.mission-mode .crew-field-note b{font-size:10px}
  body.mission-mode .phase-content-lobby>.lobby-preview b{font-size:11px}
  body.mission-mode .phase-content-lobby>.submit-row .btn{height:42px;font-size:12px}
 }
+
+/* Keep the room controls and crew guidance fully readable. */
+body.mission-mode .game-main{grid-template-rows:46px 102px minmax(0,1fr)}
+body.mission-mode .room-head{height:46px;min-height:46px;margin-bottom:0}
+body.mission-mode .room-head-tools{gap:14px}
+body.mission-mode .round-meta{min-width:148px;font-size:10px;line-height:1.55;white-space:nowrap}
+body.mission-mode .round-meta .phase-pill{font-size:10px;padding:5px 10px;margin-bottom:2px}
+body.mission-mode .crew-bar{min-height:102px;grid-template-columns:minmax(0,1.2fr) minmax(245px,.85fr) minmax(300px,.9fr)}
+body.mission-mode .crew-roster,body.mission-mode .player-row{align-items:center}
+body.mission-mode .host-tag{display:inline-flex;align-items:center;align-self:center;justify-content:center;line-height:1;padding:3px 6px;border-radius:4px}
+body.mission-mode .crew-metrics{grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto auto;align-content:center;gap:5px 8px}
+body.mission-mode .crew-score{grid-column:1;grid-row:1}
+body.mission-mode .crew-note{grid-column:1/-1;grid-row:2;min-width:0;overflow:visible;text-overflow:clip;white-space:normal;line-height:1.35}
+body.mission-mode .crew-progress{grid-column:1/-1;grid-row:3}
+body.mission-mode .copy-code{grid-column:2;grid-row:1;margin:0;white-space:nowrap}
+body.mission-mode .crew-field-note{align-items:flex-start;line-height:1.4}
+body.mission-mode .crew-field-note span{display:block;overflow:visible;-webkit-line-clamp:unset;white-space:normal}
+
+@media(max-width:900px){
+ body.mission-mode .game-main{grid-template-rows:42px 104px minmax(0,1fr)}
+ body.mission-mode .room-head{height:42px;min-height:42px}
+ body.mission-mode .round-meta{min-width:132px;font-size:9px}
+ body.mission-mode .round-meta .phase-pill{font-size:9px}
+ body.mission-mode .crew-bar{min-height:104px}
+ body.mission-mode .crew-metrics{grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;align-content:center}
+ body.mission-mode .crew-score{grid-column:1;grid-row:1}
+ body.mission-mode .crew-note{grid-column:2;grid-row:1;white-space:normal;overflow:visible;text-overflow:clip}
+ body.mission-mode .crew-progress{grid-column:1/-1;grid-row:2}
+ body.mission-mode .copy-code{grid-column:1/-1;grid-row:3;margin:0}
+ body.mission-mode .crew-field-note{align-items:flex-start}
+ body.mission-mode .crew-field-note span{display:block;overflow:visible;-webkit-line-clamp:unset;white-space:normal}
+}
+@media(max-width:600px){
+ body.mission-mode .game-main{grid-template-rows:38px 92px minmax(0,1fr)}
+ body.mission-mode .room-head{height:38px;min-height:38px}
+ body.mission-mode .room-head-tools{gap:5px}
+ body.mission-mode .round-meta{min-width:0;font-size:7px}
+ body.mission-mode .round-meta .phase-pill{font-size:7px;padding:3px 5px}
+ body.mission-mode .crew-bar{min-height:92px}
+ body.mission-mode .crew-metrics{grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto}
+ body.mission-mode .crew-note,body.mission-mode .crew-field-note{font-size:8px;line-height:1.2}
+ body.mission-mode .crew-field-note b{font-size:7px}
+}

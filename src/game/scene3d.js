@@ -185,12 +185,11 @@ export async function prepareScene(root, mission, event) {
   const kind = mission.kind || mission.theme.kind || 'planet';
   const world = addWorld(scene, kind, mission.theme.accent, mission.theme.world, mission.theme.worldRadius, mission.title);
   const ship = addShip(scene, mission.theme.accent);
-  const firstPersonSurvey = Boolean(root.closest('.phase-content-explore'));
+  const measurementVote = Boolean(root.closest('.phase-content-investigate'));
   const evidenceReview = Boolean(root.closest('.phase-content-predict'));
-  const shipBaseY = evidenceReview ? -1.72 : -2.6;
-  ship.position.x = evidenceReview ? 1.45 : 0;
-  ship.position.y = shipBaseY;
-  ship.visible = !firstPersonSurvey;
+  const missionDebrief = Boolean(root.closest('.phase-content-reveal'));
+  const layoutCameraX = measurementVote ? -1.25 : evidenceReview ? -.35 : missionDebrief ? 1.15 : 0;
+  ship.visible = false;
   const instrument = addInstrument(scene, kind, mission.theme.accent);
   const particles = new THREE.Group(); scene.add(particles);
   const cueColor = color(mission.theme.accent, '#7ee7df');
@@ -210,7 +209,6 @@ export async function prepareScene(root, mission, event) {
     frame = requestAnimationFrame(animate);
     const t = clock.getElapsedTime();
     stars.rotation.y = t * .002; stars.rotation.x = Math.sin(t * .08) * .012;
-    ship.position.y = shipBaseY + Math.sin(t * .65) * .035;
     if (world?.planet) world.planet.rotation.y = t * (kind === 'europa' ? .018 : .008);
     if (world?.terrain) world.terrain.rotation.y = (world.planet?.rotation.y || t * .008) + .28;
     if (world?.ring) world.ring.rotation.z = .3 + Math.sin(t * .11) * .02;
@@ -231,12 +229,12 @@ export async function prepareScene(root, mission, event) {
     });
     focusLine.visible = cueActive && seq?.kind === 'inspection';
     focusLine.material.opacity = cueActive ? .8 * (1 - clamp(age / 7, 0, 1)) : 0;
-    let targetX = 0, targetY = .1, zoom = 1;
+    let targetX = layoutCameraX, targetY = .1, zoom = 1;
     if (seq && age < 7) {
       const progress = clamp(age / 6.5, 0, 1);
       const ease = progress * progress * (3 - 2 * progress);
-      if (seq.kind === 'inspection') { targetX = kind === 'gamma' ? -.3 : -.58 * ease; targetY = -.15 * ease; zoom = 1 + .22 * ease; instrument.rotation.y = .42 + Math.sin(age * 3) * .22 * (age < 2 ? 1 : 0); }
-      if (seq.kind === 'scan') { targetX = kind === 'gamma' ? .8 * Math.sin(age * .55) : 0; targetY = Math.sin(age * 2.4) * .16; zoom = 1 + .11 * Math.sin(Math.PI * progress); instrument.rotation.y = .42 + Math.sin(age * 4) * .5; }
+      if (seq.kind === 'inspection') { targetX = layoutCameraX + (kind === 'gamma' ? -.3 : -.58 * ease); targetY = -.15 * ease; zoom = 1 + .22 * ease; instrument.rotation.y = .42 + Math.sin(age * 3) * .22 * (age < 2 ? 1 : 0); }
+      if (seq.kind === 'scan') { targetX = layoutCameraX + (kind === 'gamma' ? .8 * Math.sin(age * .55) : 0); targetY = Math.sin(age * 2.4) * .16; zoom = 1 + .11 * Math.sin(Math.PI * progress); instrument.rotation.y = .42 + Math.sin(age * 4) * .5; }
       if (seq.kind === 'finding') { targetY = .18 * ease; zoom = 1 + .18 * Math.sin(Math.PI * progress); }
     }
     camera.position.x += (targetX - camera.position.x) * .025;

@@ -594,8 +594,7 @@ body.mission-mode .finding-panel.is-exiting{pointer-events:none;animation:findin
 }
 
 /* First-person survey framing keeps the world interactive while suggesting a real cockpit. */
-body.mission-mode .cockpit-overlay{display:none;position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none}
-body.mission-mode .phase-content-explore .cockpit-overlay{display:block}
+body.mission-mode .cockpit-overlay{display:block;position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none}
 body.mission-mode .cockpit-overlay:before{content:'';position:absolute;inset:0;border:8px solid #111a26b8;border-top-width:5px;border-radius:8px;box-shadow:inset 0 0 28px #0009}
 body.mission-mode .cockpit-strut{position:absolute;top:-5%;bottom:46px;width:12px;border:1px solid #52657b55;background:linear-gradient(90deg,#080d13,#263344 48%,#080d13);box-shadow:0 0 18px #000b}
 body.mission-mode .cockpit-strut-left{left:12%;transform:skewX(13deg)}
@@ -613,10 +612,10 @@ body.mission-mode .cockpit-console span:nth-child(3){width:72px;height:14px;bord
  body.mission-mode .phase-content-explore .mission-intro .mission-brief{grid-column:2;grid-row:1/3;display:block;font-size:12px;line-height:1.45}
  body.mission-mode .phase-content-explore .mission-intro .source-note{grid-column:2;font-size:9px}
  body.mission-mode .phase-content-explore .mission-intro .journey-track{display:none}
- body.mission-mode .phase-content-explore .scene-instruction{top:84px;left:10px;width:min(56%,680px);padding:8px 10px}
+ body.mission-mode .phase-content-explore .scene-instruction{top:94px;left:10px;width:min(56%,680px);padding:8px 10px}
  body.mission-mode .phase-content-explore .scene-instruction strong{font-size:12px}
  body.mission-mode .phase-content-explore .scene-instruction small{font-size:10px;line-height:1.35}
- body.mission-mode .phase-content-explore .observation-area{top:138px;left:10px;width:min(38%,450px);height:clamp(84px,14vh,105px)}
+ body.mission-mode .phase-content-explore .observation-area{top:166px;left:10px;width:min(38%,450px);height:clamp(78px,12vh,96px)}
  body.mission-mode .phase-content-explore .observation-head{font-size:9px}
  body.mission-mode .phase-content-explore .focused-observation,
  body.mission-mode .phase-content-explore .empty-observation{font-size:10px;line-height:1.35}
@@ -629,4 +628,22 @@ body.mission-mode .cockpit-console span:nth-child(3){width:72px;height:14px;bord
  body.mission-mode .cockpit-strut{bottom:34px;width:7px}
  body.mission-mode .cockpit-console{height:42px;padding-bottom:6px}
  body.mission-mode .cockpit-console span{transform:scale(.72)}
+}
+
+/* Dock phase controls around the viewport instead of covering the scientific target. */
+@media(min-width:901px){
+ body.mission-mode .phase-content-investigate .mission-intro,
+ body.mission-mode .phase-content-predict .mission-intro{width:min(36%,430px)}
+ body.mission-mode .phase-content-investigate .decision-guide,
+ body.mission-mode .phase-content-predict .decision-guide{width:min(36%,430px)}
+ body.mission-mode .scan-evidence-area{width:min(36%,430px);height:76px}
+ body.mission-mode .scan-evidence-area>.evidence-strip{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+ body.mission-mode .phase-content-investigate .choice-grid{bottom:72px;width:min(44%,520px)}
+ body.mission-mode .phase-content-investigate>.submit-row{bottom:12px}
+ body.mission-mode .phase-content-predict>.evidence-strip{width:min(43%,480px)}
+ body.mission-mode .answer-area{bottom:72px;width:min(56%,620px)}
+ body.mission-mode .phase-content-predict>.submit-row{left:min(calc(56% + 20px),652px);bottom:72px}
+ body.mission-mode .phase-content-investigate .scan-panel,
+ body.mission-mode .phase-content-predict .scan-panel{bottom:72px}
+ body.mission-mode .phase-content-reveal .debrief-panel{bottom:72px}
 }

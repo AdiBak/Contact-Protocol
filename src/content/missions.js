@@ -14,7 +14,8 @@ export const missions = [
       { name: 'Split the radio waves', icon: '∿', desc: 'Compare how different frequencies arrive.', cost: 2, evidence: 'The signal sweeps through a pattern of dispersed radio frequencies characteristic of a distant, energetic source.', value: 2 }
     ],
     answers: ['A rotating neutron star', 'A message from an alien beacon', 'A reflection from a planet'], correct: 0,
-    why: 'A pulsar is a rapidly rotating neutron star whose beams sweep past Earth like a lighthouse. Its remarkably regular pulses—and gradual spin-down—fit that picture. A repeating signal alone would not prove intelligence; we look for natural explanations first.'
+    why: 'A pulsar is a rapidly rotating neutron star whose beams sweep past Earth like a lighthouse. Its remarkably regular pulses—and gradual spin-down—fit that picture. A repeating signal alone would not prove intelligence; we look for natural explanations first.',
+    variants: [{ brief: 'The array detects a radio flash every 1.37 seconds. A faint X-ray source sits at the same coordinates, and the radio beat has slowed over years. What engine could keep such time?', hotspotTexts: ['Independent dishes record the same arrival times. A local electronics fault would not naturally reproduce across separated instruments.', 'The pulse period is increasing by a few nanoseconds per day. A spinning object can slow as it radiates energy.', 'Lower-frequency radio waves arrive later than higher-frequency ones, a signature of a signal traveling through thin interstellar plasma.'], testEvidence: ['Independent dishes point to the same fixed sky position, making a single nearby transmitter less likely.', 'Timing data show a steady 1.37-second pulse and a gradual spin-down, matching a rotating compact star.', 'The frequency-dependent delay reveals dispersed radio waves that have traveled through interstellar space.'] }]
   },
   {
     title: 'A Star Blinks', tag: 'EXOPLANET SCIENCE', location: 'Orbital planet-hunter',
@@ -31,7 +32,8 @@ export const missions = [
       { name: 'Weigh the star’s wobble', icon: '↝', desc: 'Look for a planet tugging on its star.', cost: 3, evidence: 'A tiny repeating wobble in the star matches the same 24-day orbit.', value: 3 }
     ],
     answers: ['A planet crossing in front of its star', 'A large cloud of dust passing by', 'The star switching off briefly'], correct: 0,
-    why: 'A regularly repeating transit with a consistent depth is strong evidence for an orbiting planet. The star’s wobble adds an independent clue: the planet’s gravity tugs on its star. Astronomers combine methods because any one measurement can mislead.'
+    why: 'A regularly repeating transit with a consistent depth is strong evidence for an orbiting planet. The star’s wobble adds an independent clue: the planet’s gravity tugs on its star. Astronomers combine methods because any one measurement can mislead.',
+    variants: [{ brief: 'A quiet Sun-like star loses about 1% of its light for three hours, every 24 days. The dip looks nearly the same in four observing seasons. Is something orbiting the star—or changing on its surface?', hotspotTexts: ['The repeated dips share nearly the same depth and duration, a pattern expected from a regularly orbiting object.', 'A dusty cloud often blocks blue light more strongly than red. Comparing colors can test that alternative.', 'The star shows a tiny motion in the opposite rhythm to the dip, as if an orbiting companion were tugging on it.'], testEvidence: ['Four observing seasons show a dip every 24 days with a consistent shape and depth.', 'The dip is nearly equal in blue and red light, which weakens the dust-cloud explanation.', 'The star’s repeating wobble shares the transit period, an independent sign of an orbiting companion.'] }]
   },
   {
     title: 'The Red Planet Rumor', tag: 'PLANETARY SCIENCE', location: 'Mars rover field site',
@@ -48,7 +50,8 @@ export const missions = [
       { name: 'Trace the air', icon: '⌁', desc: 'Map where and when the plume appears.', cost: 2, evidence: 'The methane reading is localized near fractured rock, a place where geological reactions can occur.', value: 2 }
     ],
     answers: ['Life is confirmed on Mars', 'The source is still uncertain', 'A volcano is definitely erupting'], correct: 1,
-    why: 'Methane can come from life, water-rock chemistry, or other processes. A short-lived detection—especially one affected by measurement limits—cannot identify its source. Scientists need repeated measurements and additional chemical clues before drawing a conclusion.'
+    why: 'Methane can come from life, water-rock chemistry, or other processes. A short-lived detection—especially one affected by measurement limits—cannot identify its source. Scientists need repeated measurements and additional chemical clues before drawing a conclusion.',
+    variants: [{ brief: 'A rover sensor records a methane spike just before sunrise in a shallow crater. The reading fades by midday. Biology is one possibility, but the timing and local rocks leave several explanations open.', hotspotTexts: ['The sample arm warmed before the reading. Temperature can affect a trace-gas measurement, so an independent repeat is valuable.', 'The morning atmosphere is calmer than midday air. Local weather can concentrate or disperse gases without identifying their source.', 'A nearby mineral vein could react with water and release methane through non-biological chemistry.'], testEvidence: ['A later reading did not reproduce the spike; the first signal remains near the instrument’s detection limit.', 'The short-lived plume appeared near fractured rock where non-biological water-rock reactions are possible.', 'The sample is too small to measure isotope ratios reliably, so biology cannot be separated from geological sources.'] }]
   },
   {
     title: 'A Flash in the Deep', tag: 'HIGH-ENERGY ASTROPHYSICS', location: 'Deep-field sensor array',
@@ -65,7 +68,8 @@ export const missions = [
       { name: 'Listen for gravitational waves', icon: '≋', desc: 'Search the same moment for spacetime ripples.', cost: 1, evidence: 'No matching gravitational-wave event was recorded, though distance and detector sensitivity limit what can be ruled out.', value: 1 }
     ],
     answers: ['A distant gamma-ray burst from a cosmic explosion', 'A nearby star flaring in our sky', 'A routine signal sent by a spacecraft'], correct: 0,
-    why: 'Gamma-ray bursts are among the most energetic events known. Their afterglows and distant host galaxies link them to cosmic explosions. A missing gravitational-wave detection does not rule out an event; instruments have limits and not all bursts produce a detectable signal.'
+    why: 'Gamma-ray bursts are among the most energetic events known. Their afterglows and distant host galaxies link them to cosmic explosions. A missing gravitational-wave detection does not rule out an event; instruments have limits and not all bursts produce a detectable signal.',
+    variants: [{ brief: 'A spaceborne detector catches a two-second gamma-ray flash. A fading point of light appears in a distant galaxy hours later. The flash is real; its exact source still needs evidence.', hotspotTexts: ['Two spacecraft separated by millions of kilometers registered the burst. Their timing helps rule out a local detector glitch.', 'The afterglow shifts toward redder light while fading, as fast-moving debris cools and expands.', 'The gravitational-wave search found no matching event, but distance and detector sensitivity limit what a non-detection can tell us.'], testEvidence: ['The afterglow cools and reddens over several days, consistent with expanding material from a distant explosion.', 'Independent spacecraft detections triangulate the burst to a distant galaxy, rather than a nearby flare.', 'No gravitational-wave counterpart was detected; that constrains some models but cannot rule out a distant burst.'] }]
   },
   {
     title: 'A Breath from Europa', tag: 'OCEAN WORLDS', location: 'Europa ice-orbit surveyor',
@@ -82,6 +86,19 @@ export const missions = [
       { name: 'Search for ocean clues', icon: '◈', desc: 'Look for material that may have come from below.', cost: 3, evidence: 'Europa’s surface has evidence of an ocean beneath the ice, but this observation does not yet connect the vapor to that ocean.', value: 3 }
     ],
     answers: ['The plume proves there is life', 'Europa may have a subsurface ocean; its plume needs more study', 'The vapor must come from a volcano'], correct: 1,
-    why: 'Europa likely has a global ocean beneath its ice, making it a compelling place to study habitability. A possible plume is exciting, but it does not by itself prove the material came from the ocean—or that life is present. Future observations and spacecraft measurements can test those ideas.'
+    why: 'Europa likely has a global ocean beneath its ice, making it a compelling place to study habitability. A possible plume is exciting, but it does not by itself prove the material came from the ocean—or that life is present. Future observations and spacecraft measurements can test those ideas.',
+    variants: [{ brief: 'A spectrometer catches a brief water-vapor signal above Europa’s fractured ice. The candidate plume appears during one pass and vanishes on the next. Could it sample the ocean below—or something nearer the surface?', hotspotTexts: ['The vapor fingerprint is consistent with water, but faint data leave its salts and other trace ingredients unresolved.', 'The signal appeared during one orbital pass. Repeated viewing can test whether tidal flexing opens the crack on a schedule.', 'Radar hints at a deep ocean beneath the ice. That makes an ocean source plausible, but does not connect this particular vapor signal to it.'], testEvidence: ['The spectrum confirms water vapor but is too faint to identify salts or complex organic molecules.', 'The candidate plume coincided with a tidal phase once; more passes are needed to see if the timing repeats.', 'Radar and surface geology support a hidden ocean, but the vapor’s route from depth to space remains unproven.'] }]
   }
 ];
+
+export function missionForRound(state, catalog) {
+  const mission = catalog[state.missionOrder?.[state.round] ?? state.round] || catalog[0];
+  const variant = mission.variants?.[state.missionVariants?.[state.round] || 0];
+  if (!variant) return mission;
+  return {
+    ...mission,
+    brief: variant.brief || mission.brief,
+    hotspots: mission.hotspots.map((point, index) => ({ ...point, text: variant.hotspotTexts?.[index] || point.text })),
+    tests: mission.tests.map((test, index) => ({ ...test, evidence: variant.testEvidence?.[index] || test.evidence }))
+  };
+}

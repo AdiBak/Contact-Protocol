@@ -10,7 +10,7 @@ The game uses PeerJS for WebRTC signaling and direct peer-to-peer data connectio
 
 ## Cooperative game loop
 
-Play five science missions together, from radio astronomy to ocean worlds. Each mission adds a finding or open question to a shared expedition record:
+Play five science missions together, from radio astronomy to ocean worlds. Each launch draws a different briefing and set of field clues for every case, so returning crews revisit the science with new information. Each mission adds a finding or open question to a shared expedition record:
 
 1. **Explore:** Click points of interest in a first-person science scene. Discoveries are shared with the crew. A majority of connected researchers can move the crew on; inspecting every point is optional.
 2. **Choose scans:** Each researcher privately votes for one scan. The crew has four shared research-energy units. Distinct scans are ranked by votes, with ties resolved by the order shown. The game funds scans in that order while they fit the remaining energy.

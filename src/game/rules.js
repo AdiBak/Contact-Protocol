@@ -1,3 +1,5 @@
+import { missionForRound } from '../content/missions.js';
+
 export const RESEARCH_BUDGET = 4;
 
 export function publicState(state) {
@@ -31,7 +33,7 @@ export function majorityReached(state, key) {
 }
 
 export function resolveScans(state, missions) {
-  const mission = missions[state.round];
+  const mission = missionForRound(state, missions);
   const counts = new Map();
   state.players.filter((player) => player.connected).forEach((player) => {
     if (Number.isInteger(player.investigation)) counts.set(player.investigation, (counts.get(player.investigation) || 0) + 1);
@@ -53,7 +55,7 @@ export function resolveScans(state, missions) {
 }
 
 export function resolveRound(state, missions) {
-  const mission = missions[state.round];
+  const mission = missionForRound(state, missions);
   const connected = state.players.filter((player) => player.connected);
   const answerCounts = new Map();
   connected.forEach((player) => answerCounts.set(player.answer, (answerCounts.get(player.answer) || 0) + 1));

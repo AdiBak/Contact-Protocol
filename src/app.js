@@ -1,4 +1,4 @@
-import { missions } from './content/missions.js';
+import { missionForRound, missions } from './content/missions.js';
 import { allDone, expeditionOutcome, majorityReached, publicState, RESEARCH_BUDGET, resolveRound, resolveScans } from './game/rules.js';
 import { sceneMarkup } from './game/scene.js';
 import { esc } from './game/text.js';
@@ -87,7 +87,7 @@ import { esc } from './game/text.js';
     if (!host || !state) return;
     const player = state.players.find((candidate) => candidate.id === id && candidate.connected);
     if (!player) return;
-    const mission = missions[state.round];
+    const mission = missionForRound(state, missions);
 
     if (action === 'inspect' && state.phase === 'explore' && mission.hotspots.some((point) => point.id === value)) {
       if (!state.discoveries.includes(value)) {
@@ -135,6 +135,8 @@ import { esc } from './game/text.js';
     state.round = 0;
     state.teamScore = 0;
     state.lastResult = null;
+    state.journeyLog = [];
+    state.missionVariants = missions.map((mission) => mission.variants?.length ? crypto.getRandomValues(new Uint8Array(1))[0] % mission.variants.length : 0);
     resetMissionPlayers();
     state.phase = 'explore';
     broadcast();
@@ -160,6 +162,7 @@ import { esc } from './game/text.js';
     state.teamScore = 0;
     state.lastResult = null;
     state.journeyLog = [];
+    state.missionVariants = null;
     resetMissionPlayers();
     state.players.forEach((player) => { player.score = 0; });
     broadcast();
@@ -331,7 +334,7 @@ import { esc } from './game/text.js';
       localLocked = false;
     }
     const me = state.players.find((player) => player.id === myId);
-    const mission = missions[state.round] || missions[0];
+    const mission = missionForRound(state, missions);
     const discovered = state.discoveries || [];
     const active = state.players.filter((player) => player.connected);
     const isHost = host;
@@ -340,7 +343,7 @@ import { esc } from './game/text.js';
     let content = '';
 
     if (state.phase === 'lobby') {
-      content = `<div class="card-kicker">Awaiting launch authorization</div><h1 class="mission-title">Crew assembly</h1><p class="mission-brief">Share the room code with your crew. Together, trace a chain of cosmic clues across five observatories, pool evidence, and build a shared field record.</p>${journeyTrack()}<div class="lobby-preview"><span>01 · SURVEY</span><b>→</b><span>02 · VOTE ON SCANS</span><b>→</b><span>03 · INTERPRET</span></div><div class="submit-row">${isHost ? '<button id="startBtn" class="btn btn-primary">Launch expedition ↗</button>' : '<span class="hint waiting-dots">Waiting for the host to launch</span>'}</div>`;
+      content = `<div class="card-kicker">Awaiting launch authorization</div><h1 class="mission-title">Crew assembly</h1><p class="mission-brief">Share the room code with your crew. Travel through five scientific frontiers, pool evidence, and build a shared expedition field report.</p>${journeyTrack()}<div class="lobby-preview"><span>01 · SURVEY</span><b>→</b><span>02 · VOTE ON SCANS</span><b>→</b><span>03 · INTERPRET</span></div><div class="submit-row">${isHost ? '<button id="startBtn" class="btn btn-primary">Launch expedition ↗</button>' : '<span class="hint waiting-dots">Waiting for the host to launch</span>'}</div>`;
     } else if (state.phase === 'explore') {
       const selected = mission.hotspots.find((point) => point.id === localHotspot && discovered.includes(point.id)) || mission.hotspots.find((point) => point.id === discovered.at(-1));
       const ready = readyCount('readyExplore');

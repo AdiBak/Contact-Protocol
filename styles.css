@@ -465,9 +465,10 @@ body.mission-mode .crew-field-note b{font-size:10px}
 
 /* Keep the room controls and crew guidance fully readable. */
 body.mission-mode .game-main{grid-template-rows:46px 102px minmax(0,1fr)}
-body.mission-mode .room-head{height:46px;min-height:46px;margin-bottom:0}
-body.mission-mode .room-head-tools{gap:14px}
-body.mission-mode .round-meta{min-width:148px;font-size:10px;line-height:1.55;white-space:nowrap}
+body.mission-mode .room-head{display:grid;grid-template-columns:1fr 1fr;align-items:center;height:46px;min-height:46px;margin-bottom:0}
+body.mission-mode .room-identity{justify-content:center;text-align:center}
+body.mission-mode .room-head-tools{justify-content:center;gap:14px}
+body.mission-mode .round-meta{min-width:148px;font-size:10px;line-height:1.55;text-align:center;white-space:nowrap}
 body.mission-mode .round-meta .phase-pill{font-size:10px;padding:5px 10px;margin-bottom:2px}
 body.mission-mode .crew-bar{min-height:102px;grid-template-columns:minmax(0,1.2fr) minmax(245px,.85fr) minmax(300px,.9fr)}
 body.mission-mode .crew-roster,body.mission-mode .player-row{align-items:center}

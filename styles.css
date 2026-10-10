@@ -55,3 +55,24 @@
     @keyframes pulsarRotate{to{transform:rotate(360deg)}}
     @media(max-width:460px){.journey-name{font-size:7px}.journey-track{gap:2px}.final-report{padding:13px}.report-entry{grid-template-columns:20px minmax(0,1fr) auto;gap:6px}.report-entry small{font-size:8px}}
     @media(prefers-reduced-motion:reduce){.pulsar-world{animation:none!important}}
+
+/* Procedural 3D mission stage, calibrated before crew actions unlock */
+.scene-wrap{aspect-ratio:2/1;min-height:260px;background:#050b17;box-shadow:0 24px 60px #0009,inset 0 0 70px #0008}
+.scene-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.scene-vignette{z-index:1;background:linear-gradient(180deg,#06101a55,transparent 40%,#08111c99 100%),radial-gradient(ellipse at 50% 43%,transparent 44%,#030712b8 100%)}
+.scene-caption{z-index:4}.scene-caption b{color:var(--cyan);font-weight:500}
+.scene-loader{position:absolute;z-index:5;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#050b17e8;color:#b9d8df;font:8px var(--mono);letter-spacing:.14em;transition:opacity .35s,visibility .35s}
+.scene-loader i{width:28px;height:28px;border:1px solid #64808d;border-top-color:var(--cyan);border-radius:50%;animation:sceneLoadSpin .8s linear infinite}
+.scene-loader.ready{opacity:0;visibility:hidden;pointer-events:none}
+.scene-fallback{background:radial-gradient(circle at 66% 42%,var(--scene-accent) 0 2%,transparent 3%),radial-gradient(circle at 62% 48%,var(--scene-color) 0 13%,#1a2946 14% 19%,transparent 20%),radial-gradient(circle at 18% 22%,#d7ebff 0 1px,transparent 2px),radial-gradient(circle at 32% 15%,#d7ebff 0 1px,transparent 2px),radial-gradient(circle at 85% 27%,#d7ebff 0 1px,transparent 2px),linear-gradient(135deg,#101b35,#07101b 70%)}
+.scene-fallback .scene-loader{opacity:0;visibility:hidden}
+.scene-fallback:before{content:'';position:absolute;width:23%;aspect-ratio:1;left:60%;top:24%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f1e4c4,var(--scene-color) 48%,#1a243b 75%);box-shadow:0 0 55px color-mix(in srgb,var(--scene-accent) 35%,transparent);animation:worldDrift 12s ease-in-out infinite alternate}
+.scene-fallback .hotspot{z-index:4}
+.decision-guide{display:flex;align-items:flex-start;gap:10px;margin:13px 0;padding:11px 13px;border-left:2px solid var(--amber);border-radius:0 8px 8px 0;background:#ffc7790b;color:#c8d1dc;font-size:11px;line-height:1.5}
+.decision-guide strong{flex:0 0 auto;color:var(--amber);font:8px var(--mono);letter-spacing:.1em;padding-top:2px}
+.source-note{margin:4px 0 12px;color:var(--dim);font:8px var(--mono);letter-spacing:.04em;line-height:1.5}
+.source-note a{color:#91c8ce;text-underline-offset:2px}
+@keyframes sceneLoadSpin{to{transform:rotate(360deg)}}
+@keyframes worldDrift{to{transform:translate(-8px,6px) scale(1.035)}}
+@media(max-width:760px){.scene-wrap{aspect-ratio:1.55;min-height:225px}}
+@media(prefers-reduced-motion:reduce){.scene-loader i,.scene-fallback:before{animation:none!important}}

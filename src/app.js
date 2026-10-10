@@ -1,4 +1,4 @@
-import { missionForRound, missions } from './content/missions.js';
+import { buildTargetMission, missionForRound, missions } from './content/missions.js';
 import { allDone, expeditionOutcome, majorityReached, publicState, RESEARCH_BUDGET, resolveRound, resolveScans } from './game/rules.js';
 import { sceneMarkup } from './game/scene.js';
 import { esc } from './game/text.js';
@@ -22,6 +22,15 @@ import { esc } from './game/text.js';
   let localPhase = '';
   let localHotspot = null;
   let busy = false;
+  let sceneRoot = null;
+  let localSceneReady = false;
+  let targetDataPromise = null;
+
+  function fetchMissionTarget() {
+    return fetch('/api/mission', { signal: AbortSignal.timeout(6500) })
+      .then((response) => response.ok ? response : null)
+      .catch(() => null);
+  }
 
   function toast(message) {
     toastEl.textContent = message;
@@ -73,13 +82,13 @@ import { esc } from './game/text.js';
       state.players.forEach((player) => { player.investigation = null; });
     } else if (state.phase === 'investigate' && allDone(state, 'investigation')) {
       resolveScans(state, missions);
-      state.lastEvent = { kind: 'scan', id: `${state.round}-${Date.now()}` };
+      state.lastEvent = { kind: 'scan', label: state.fundedScans.map((index) => missionForRound(state, missions).tests[index]?.name).filter(Boolean).join(' + '), startedAt: Date.now(), id: `${state.round}-${Date.now()}` };
       state.phase = 'predict';
       state.players.forEach((player) => { player.answer = null; player.confidence = null; });
     } else if (state.phase === 'predict' && allDone(state, 'answer')) {
       state.phase = 'reveal';
       resolveRound(state, missions);
-      state.lastEvent = { kind: 'finding', id: `${state.round}-${Date.now()}` };
+      state.lastEvent = { kind: 'finding', startedAt: Date.now(), id: `${state.round}-${Date.now()}` };
     }
   }
 
@@ -92,7 +101,7 @@ import { esc } from './game/text.js';
     if (action === 'inspect' && state.phase === 'explore' && mission.hotspots.some((point) => point.id === value)) {
       if (!state.discoveries.includes(value)) {
         state.discoveries.push(value);
-        state.lastEvent = { kind: 'inspection', pointId: value, id: `${state.round}-${Date.now()}` };
+        state.lastEvent = { kind: 'inspection', pointId: value, startedAt: Date.now(), id: `${state.round}-${Date.now()}` };
       }
     }
     if (action === 'readyExplore' && state.phase === 'explore') player.readyExplore = true;
@@ -126,17 +135,29 @@ import { esc } from './game/text.js';
     state.energyUsed = 0;
   }
 
-  function startMission() {
+  async function startMission() {
     if (!host) return;
     if (state.players.filter((player) => player.connected).length < 2) {
       toast('Invite at least one more researcher.');
       return;
     }
+    const launch = $('#startBtn');
+    if (launch) launch.disabled = true;
+    toast('Preparing a fresh science target…');
+    let liveTarget = null;
+    try {
+      const request = targetDataPromise || fetchMissionTarget();
+      targetDataPromise = fetchMissionTarget();
+      const response = await request;
+      if (response?.ok) liveTarget = (await response.json()).target;
+    } catch { /* Authored mission briefings keep the expedition playable offline. */ }
+    state.dynamicTargetMission = liveTarget ? buildTargetMission(liveTarget) : null;
     state.round = 0;
     state.teamScore = 0;
     state.lastResult = null;
     state.journeyLog = [];
     state.missionVariants = missions.map((mission) => mission.variants?.length ? crypto.getRandomValues(new Uint8Array(1))[0] % mission.variants.length : 0);
+    state.missionOrder = missions.map((_, index) => index).sort(() => Math.random() - .5);
     resetMissionPlayers();
     state.phase = 'explore';
     broadcast();
@@ -165,6 +186,7 @@ import { esc } from './game/text.js';
     state.missionVariants = null;
     resetMissionPlayers();
     state.players.forEach((player) => { player.score = 0; });
+    targetDataPromise = fetchMissionTarget();
     broadcast();
   }
 
@@ -218,6 +240,7 @@ import { esc } from './game/text.js';
     room = newRoom();
     peer = new Peer(`cp-${room.toLowerCase()}`);
     peer.on('open', (id) => {
+      targetDataPromise = fetchMissionTarget();
       myId = `host-${id}`;
       hostPeerId = id;
       state = { room, phase: 'lobby', round: 0, teamScore: 0, journeyLog: [], players: [{ id: myId, name, host: true, connected: true, score: 0, readyExplore: false, investigation: null, answer: null, confidence: null }], connections: {}, discoveries: [], fundedScans: [], scanVotes: {}, energyUsed: 0, lastResult: null };
@@ -316,10 +339,11 @@ import { esc } from './game/text.js';
   }
 
   function journeyTrack(log = state?.journeyLog || [], final = false) {
-    return `<div class="journey-track ${final ? 'journey-track-final' : ''}" aria-label="Expedition route">${missions.map((mission, index) => {
+    return `<div class="journey-track ${final ? 'journey-track-final' : ''}" aria-label="Expedition route">${missions.map((_, index) => {
+      const mission = missionForRound({ ...state, round: index }, missions);
       const entry = log[index];
       const current = !final && state?.round === index && state?.phase !== 'lobby' && state?.phase !== 'finished';
-      return `<div class="journey-stop ${entry ? (entry.correct ? 'complete' : 'uncertain') : ''} ${current ? 'current' : ''}"><span class="journey-node">${entry ? (entry.correct ? '✓' : '·') : String(index + 1).padStart(2, '0')}</span><span class="journey-name">${esc(mission.theme.planet || mission.location)}</span>${entry ? `<small>${entry.points >= 0 ? '+' : ''}${entry.points} RP</small>` : ''}</div>`;
+      return `<div class="journey-stop ${entry ? (entry.correct ? 'complete' : 'uncertain') : ''} ${current ? 'current' : ''}"><span class="journey-node">${entry ? (entry.correct ? '✓' : '·') : String(index + 1).padStart(2, '0')}</span><span class="journey-name">${esc(mission.location || mission.theme.planet)}</span>${entry ? `<small>${entry.points >= 0 ? '+' : ''}${entry.points} RP</small>` : ''}</div>`;
     }).join('')}</div>`;
   }
 
@@ -347,23 +371,23 @@ import { esc } from './game/text.js';
     } else if (state.phase === 'explore') {
       const selected = mission.hotspots.find((point) => point.id === localHotspot && discovered.includes(point.id)) || mission.hotspots.find((point) => point.id === discovered.at(-1));
       const ready = readyCount('readyExplore');
-      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} / ${mission.tag}</div><h1 class="mission-title">${esc(mission.title)}</h1><p class="mission-brief">${esc(mission.brief)}</p>${journeyTrack()}<div class="scene-instruction"><span class="instruction-orb">⌖</span><span><strong>Survey the scene</strong><small>Inspect points of interest together. A majority of the crew can move the expedition on when ready.</small></span><span class="scene-counter">${discovered.length}/${mission.hotspots.length} FOUND</span></div>${sceneMarkup(mission, discovered, localHotspot, state.lastEvent)}<div class="observation-area"><div class="observation-head"><span>CREW OBSERVATIONS</span><span>${discovered.length} / ${mission.hotspots.length}</span></div>${selected ? `<div class="focused-observation"><div class="focused-kicker">${esc(selected.title)}</div><p>${esc(selected.text)}</p></div>` : '<div class="empty-observation">The crew has not inspected any equipment yet. Find a marker in the scene to reveal a field note.</div>'}<div class="observation-list">${discoveryCards(mission)}</div></div><div class="submit-row"><button id="readyExplore" class="btn btn-primary" ${localLocked ? 'disabled' : ''}>${localLocked ? 'Ready to scan ✓' : 'Ready to scan ↗'}</button><span class="hint">${ready}/${active.length} ready · ${Math.floor(active.length / 2) + 1} moves the crew on</span></div>`;
+      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} / ${mission.tag}</div><h1 class="mission-title">${esc(mission.title)}</h1><p class="mission-brief">${esc(mission.brief)}</p>${mission.source ? `<p class="source-note">LIVE TARGET DATA · <a href="${esc(mission.sourceUrl)}" target="_blank" rel="noreferrer">${esc(mission.source)}</a> · mission events are simulated</p>` : ''}${journeyTrack()}<div class="scene-instruction"><span class="instruction-orb">⌖</span><span><strong>Survey the scene</strong><small>Tap a glowing instrument to inspect it. Each field note narrows the possibilities. When ready, vote to move into the measurement phase.</small></span><span class="scene-counter">${discovered.length}/${mission.hotspots.length} FOUND</span></div>${sceneMarkup(mission, discovered, localHotspot, state.lastEvent)}<div class="observation-area"><div class="observation-head"><span>CREW OBSERVATIONS</span><span>${discovered.length} / ${mission.hotspots.length}</span></div>${selected ? `<div class="focused-observation"><div class="focused-kicker">${esc(selected.title)}</div><p>${esc(selected.text)}</p></div>` : '<div class="empty-observation">Start by selecting a labeled instrument in the 3D scene. Its field note becomes visible to the whole crew.</div>'}<div class="observation-list">${discoveryCards(mission)}</div></div><div class="submit-row"><button id="readyExplore" class="btn btn-primary" ${localLocked ? 'disabled' : ''}>${localLocked ? 'Ready to scan ✓' : 'Ready to scan ↗'}</button><span class="hint">${ready}/${active.length} ready · a crew majority advances</span></div>`;
     } else if (state.phase === 'investigate') {
       const locked = readyCount('investigation');
       const budget = Array.from({ length: RESEARCH_BUDGET }, (_, index) => `<i class="energy-cell ${index < RESEARCH_BUDGET ? 'charged' : ''}"></i>`).join('');
-      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} / ${mission.tag}</div><h1 class="mission-title">Choose the next measurements.</h1><p class="mission-brief">The crew has ${RESEARCH_BUDGET} shared energy. Each researcher privately votes for one scan. The most popular distinct scans run in vote order while energy allows.</p><div class="energy-panel"><div><span class="panel-label">SHARED RESEARCH ENERGY</span><strong>${RESEARCH_BUDGET} UNITS</strong></div><div class="energy-cells">${budget}</div><small>Ties use the scan order shown below.</small></div>${discovered.length ? `<div class="evidence-strip">${discoveryCards(mission)}</div>` : '<div class="empty-observation">No free observations collected. Your instruments can still investigate the anomaly.</div>'}<div class="choice-grid scan-grid">${mission.tests.map((test, index) => `<button class="choice scan-choice ${localPick === index ? 'selected' : ''}" data-pick="${index}" ${localLocked ? 'disabled' : ''}><span class="choice-icon">${test.icon}</span><span class="scan-cost">${test.cost} ENERGY</span><strong>${esc(test.name)}</strong><small>${esc(test.desc)}</small></button>`).join('')}</div><div class="submit-row"><button id="lockScan" class="btn btn-primary" ${localPick === null || localLocked ? 'disabled' : ''}>${localLocked ? 'Vote locked ✓' : 'Lock scan vote'}</button><span class="hint">${locked}/${active.length} votes locked${localLocked ? ' · your vote is private' : ''}</span></div>`;
+      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} / ${mission.tag}</div><h1 class="mission-title">Choose the next measurements.</h1><p class="mission-brief">The crew has ${RESEARCH_BUDGET} shared energy. Each researcher privately votes for one scan. The most popular distinct scans run in vote order while energy allows.</p>${sceneMarkup(mission, discovered, null, state.lastEvent, false)}<div class="decision-guide"><strong>YOUR TASK</strong><span>Pick the scan that best separates the competing explanations. The cards explain what each scan measures; evidence appears after the crew's votes resolve.</span></div><div class="energy-panel"><div><span class="panel-label">SHARED RESEARCH ENERGY</span><strong>${RESEARCH_BUDGET} UNITS</strong></div><div class="energy-cells">${budget}</div><small>Ties use the scan order shown below.</small></div>${discovered.length ? `<div class="evidence-strip">${discoveryCards(mission)}</div>` : '<div class="empty-observation">No free observations collected. Your instruments can still investigate the anomaly.</div>'}<div class="choice-grid scan-grid">${mission.tests.map((test, index) => `<button class="choice scan-choice ${localPick === index ? 'selected' : ''}" data-pick="${index}" ${localLocked || !localSceneReady ? 'disabled' : ''}><span class="choice-icon">${test.icon}</span><span class="scan-cost">${test.cost} ENERGY</span><strong>${esc(test.name)}</strong><small>${esc(test.desc)}</small></button>`).join('')}</div><div class="submit-row"><button id="lockScan" class="btn btn-primary" ${localPick === null || localLocked || !localSceneReady ? 'disabled' : ''}>${localLocked ? 'Vote locked ✓' : 'Lock scan vote'}</button><span class="hint">${locked}/${active.length} votes locked${localLocked ? ' · your vote is private' : ''}</span></div>`;
     } else if (state.phase === 'predict') {
       const locked = readyCount('answer');
       const scans = evidenceCards(mission, state.fundedScans || []);
       const observations = discoveryCards(mission);
-      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} / ${mission.tag}</div><h1 class="mission-title">What does the evidence support?</h1><p class="mission-brief">The crew spent ${state.energyUsed || 0} of ${RESEARCH_BUDGET} energy. Review the findings, then make a private call. A careful level of confidence is part of good science.</p>${voteTally(mission, state.scanVotes)}<div class="evidence-strip">${scans || '<div class="empty-observation">No scans were funded this mission.</div>'}${observations}</div><div class="phase-pill">Choose your hypothesis</div><div class="choice-grid">${mission.answers.map((answer, index) => `<button class="choice answer-choice ${localAnswer === index ? 'selected' : ''}" data-answer="${index}" ${localLocked ? 'disabled' : ''}><span class="choice-icon">${['◉', '◈', '✧'][index]}</span><strong>${esc(answer)}</strong><small>Interpret the evidence</small></button>`).join('')}</div><div class="confidence-row"><span class="field-label">YOUR CONFIDENCE</span><div class="confidence-options">${[['1', 'Unsure'], ['2', 'Leaning'], ['3', 'High']].map(([value, label]) => `<button type="button" class="confidence ${localConfidence === Number(value) ? 'selected' : ''}" data-confidence="${value}" ${localLocked ? 'disabled' : ''}><b>${value}</b><span>${label}</span></button>`).join('')}</div></div><div class="submit-row"><button id="lockHypothesis" class="btn btn-primary" ${localAnswer === null || localLocked ? 'disabled' : ''}>${localLocked ? 'Hypothesis locked ✓' : 'Lock hypothesis'}</button><span class="hint">${locked}/${active.length} hypotheses locked</span></div>`;
+      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} / ${mission.tag}</div><h1 class="mission-title">What does the evidence support?</h1><p class="mission-brief">The crew spent ${state.energyUsed || 0} of ${RESEARCH_BUDGET} energy. Review the findings, then make a private call. A careful level of confidence is part of good science.</p>${sceneMarkup(mission, discovered, null, state.lastEvent, false)}<div class="decision-guide"><strong>YOUR TASK</strong><span>Compare each hypothesis with the observations and funded scans. Choose the explanation the evidence supports best; a cautious answer is valid when the evidence is incomplete.</span></div>${voteTally(mission, state.scanVotes)}<div class="evidence-strip">${scans || '<div class="empty-observation">No scans were funded this mission.</div>'}${observations}</div><div class="phase-pill">Choose your hypothesis</div><div class="choice-grid">${mission.answers.map((answer, index) => `<button class="choice answer-choice ${localAnswer === index ? 'selected' : ''}" data-answer="${index}" ${localLocked || !localSceneReady ? 'disabled' : ''}><span class="choice-icon">${['◉', '◈', '✧'][index]}</span><strong>${esc(answer)}</strong><small>Interpret the evidence</small></button>`).join('')}</div><div class="confidence-row"><span class="field-label">YOUR CONFIDENCE</span><div class="confidence-options">${[['1', 'Unsure'], ['2', 'Leaning'], ['3', 'High']].map(([value, label]) => `<button type="button" class="confidence ${localConfidence === Number(value) ? 'selected' : ''}" data-confidence="${value}" ${localLocked || !localSceneReady ? 'disabled' : ''}><b>${value}</b><span>${label}</span></button>`).join('')}</div></div><div class="submit-row"><button id="lockHypothesis" class="btn btn-primary" ${localAnswer === null || localLocked || !localSceneReady ? 'disabled' : ''}>${localLocked ? 'Hypothesis locked ✓' : 'Lock hypothesis'}</button><span class="hint">${locked}/${active.length} hypotheses locked</span></div>`;
     } else if (state.phase === 'reveal') {
       const result = state.lastResult || { correctVotes: 0, total: active.length, used: [], crewWon: false, roundPoints: 0, calibrationPoints: 0, scanPoints: 0, conclusionPoints: 0 };
       const crewAnswer = mission.answers[result.crewAnswer] || 'No majority conclusion';
       const answerBreakdown = Object.entries(result.answerVotes || {}).map(([index, count]) => ({ answer: mission.answers[Number(index)], count }))
         .filter((row) => row.answer && row.count > 0).sort((a, b) => b.count - a.count)
         .map((row) => `<span>${esc(row.answer)} · ${row.count}</span>`).join('');
-      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} DEBRIEF / ${mission.tag}</div><h1 class="mission-title">${esc(mission.title)}</h1><div class="finding-banner"><span class="finding-icon">${result.crewWon ? '✦' : '⌁'}</span><span>${result.crewWon ? 'FINDING ADDED TO EXPEDITION LOG' : 'OPEN QUESTION ADDED TO EXPEDITION LOG'}</span></div><div class="result-box"><div class="result-seal">${result.crewWon ? '✓' : '∿'}</div><div><h3>${result.crewWon ? 'A strong crew finding' : 'The signal stays uncertain'}</h3><p><strong>Crew conclusion:</strong> ${esc(crewAnswer)}${result.crewWon ? ' · Correct' : ''}</p><div class="answer-votes">${answerBreakdown}</div><p>${esc(mission.why)}</p><p class="result-score">${result.correctVotes} OF ${result.total} RESEARCHERS CORRECT · ${result.roundPoints >= 0 ? '+' : ''}${result.roundPoints} CREW RP THIS MISSION</p></div></div>${journeyTrack()}<div class="score-breakdown"><div><span>Conclusion</span><b>${result.conclusionPoints >= 0 ? '+' : ''}${result.conclusionPoints} RP</b></div><div><span>Useful scans</span><b>+${result.scanPoints} RP</b></div><div><span>Confidence calibration</span><b>${result.calibrationPoints > 0 ? '+' : ''}${result.calibrationPoints} RP</b></div></div><div class="evidence-strip">${evidenceCards(mission, result.used || [])}${discoveryCards(mission)}</div><div class="crew-scoreline"><span>SHARED RESEARCH TOTAL</span><strong>${state.teamScore} RP</strong></div><div class="submit-row">${isHost ? `<button id="nextBtn" class="btn btn-primary">${state.round === missions.length - 1 ? 'Final expedition report ↗' : 'Continue expedition ↗'}</button>` : '<span class="hint waiting-dots">Waiting for the host</span>'}</div>`;
+      content = `<div class="card-kicker">MISSION ${String(state.round + 1).padStart(2, '0')} DEBRIEF / ${mission.tag}</div><h1 class="mission-title">${esc(mission.title)}</h1>${sceneMarkup(mission, state.discoveries || [], null, state.lastEvent, false)}<div class="finding-banner"><span class="finding-icon">${result.crewWon ? '✦' : '⌁'}</span><span>${result.crewWon ? 'FINDING ADDED TO EXPEDITION LOG' : 'OPEN QUESTION ADDED TO EXPEDITION LOG'}</span></div><div class="result-box"><div class="result-seal">${result.crewWon ? '✓' : '∿'}</div><div><h3>${result.crewWon ? 'A strong crew finding' : 'The signal stays uncertain'}</h3><p><strong>Crew conclusion:</strong> ${esc(crewAnswer)}${result.crewWon ? ' · Correct' : ''}</p><div class="answer-votes">${answerBreakdown}</div><p>${esc(mission.why)}</p><p class="result-score">${result.correctVotes} OF ${result.total} RESEARCHERS CORRECT · ${result.roundPoints >= 0 ? '+' : ''}${result.roundPoints} CREW RP THIS MISSION</p></div></div>${journeyTrack()}<div class="score-breakdown"><div><span>Conclusion</span><b>${result.conclusionPoints >= 0 ? '+' : ''}${result.conclusionPoints} RP</b></div><div><span>Useful scans</span><b>+${result.scanPoints} RP</b></div><div><span>Confidence calibration</span><b>${result.calibrationPoints > 0 ? '+' : ''}${result.calibrationPoints} RP</b></div></div><div class="evidence-strip">${evidenceCards(mission, result.used || [])}${discoveryCards(mission)}</div><div class="crew-scoreline"><span>SHARED RESEARCH TOTAL</span><strong>${state.teamScore} RP</strong></div><div class="submit-row">${isHost ? `<button id="nextBtn" class="btn btn-primary">${state.round === missions.length - 1 ? 'Final expedition report ↗' : 'Continue expedition ↗'}</button>` : '<span class="hint waiting-dots">Waiting for the host</span>'}</div>`;
     } else {
       const outcome = expeditionOutcome(state.teamScore);
       const log = state.journeyLog || [];
@@ -426,6 +450,30 @@ import { esc } from './game/text.js';
       localConfidence = Number(button.dataset.confidence);
       render();
     }));
+
+    sceneRoot = game.querySelector('[data-scene-root]');
+    localSceneReady = false;
+    if (sceneRoot) {
+      const thisRoot = sceneRoot;
+      const unlockSceneActions = () => {
+        if (!thisRoot.isConnected) return;
+        localSceneReady = true;
+        thisRoot.querySelectorAll('[data-hotspot]').forEach((button) => { button.disabled = false; });
+        game.querySelectorAll('[data-pick],[data-answer],[data-confidence]').forEach((button) => { if (!localLocked) button.disabled = false; });
+        const lockScan = $('#lockScan'), lockHypothesis = $('#lockHypothesis');
+        if (lockScan && !localLocked) lockScan.disabled = localPick === null;
+        if (lockHypothesis && !localLocked) lockHypothesis.disabled = localAnswer === null;
+      };
+      import('./game/scene3d.js').then(({ prepareScene }) => prepareScene(thisRoot, mission, state.lastEvent)).then(unlockSceneActions).catch((error) => {
+        console.warn('3D scene could not initialize:', error);
+        if (!thisRoot.isConnected) return;
+        thisRoot.classList.add('scene-fallback');
+        thisRoot.querySelector('.scene-canvas')?.remove();
+        thisRoot.querySelector('[data-scene-loader]')?.classList.add('ready');
+        thisRoot.querySelector('[data-scene-loader] span').textContent = 'LOW-POWER VISUAL MODE · MISSION IS READY';
+        unlockSceneActions();
+      });
+    }
   }
 
   $('#hostBtn').addEventListener('click', hostRoom);

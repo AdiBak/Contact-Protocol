@@ -365,6 +365,37 @@ import { esc } from './game/text.js';
     }).join('')}</div>`;
   }
 
+  function arrangePhaseContent(container, phase) {
+    const get = (selector) => container.querySelector(selector);
+    const take = (selector) => { const node = get(selector); node?.remove(); return node; };
+    const group = (className, ...nodes) => {
+      const wrapper = document.createElement('section');
+      wrapper.className = className;
+      nodes.filter(Boolean).forEach((node) => wrapper.append(node));
+      return wrapper;
+    };
+    const place = (...nodes) => container.replaceChildren(...nodes.filter(Boolean));
+    const intro = (includeJourney = true) => group('mission-intro', take('.card-kicker'), take('.mission-title'), take('.mission-brief'), take('.source-note'), includeJourney ? take('.journey-track') : null);
+    const stage = () => group('scene-stage', take('.scene-wrap'));
+    const action = () => take('.submit-row');
+
+    if (phase === 'explore') {
+      place(intro(), stage(), take('.scene-instruction'), take('.observation-area'), action());
+    } else if (phase === 'investigate') {
+      const evidence = group('scan-evidence-area', take('.evidence-strip'), take('.empty-observation'));
+      place(intro(), stage(), take('.decision-guide'), take('.energy-panel'), evidence, take('.choice-grid'), action());
+    } else if (phase === 'predict') {
+      const answers = group('answer-area', take('.phase-pill'), take('.choice-grid'), take('.confidence-row'));
+      place(intro(), stage(), take('.decision-guide'), take('.vote-tally'), take('.evidence-strip'), answers, action());
+    } else if (phase === 'reveal') {
+      const debrief = group('debrief-panel', take('.finding-banner'), take('.result-box'), take('.journey-track'), take('.score-breakdown'), take('.evidence-strip'), take('.crew-scoreline'));
+      place(intro(false), stage(), debrief, action());
+    } else if (phase === 'finished') {
+      const overview = group('report-overview', take('.final-orbit'), take('.card-kicker'), take('.mission-title'), take('.mission-brief'), take('.final-score'), take('.final-narrative'));
+      place(overview, take('.final-report'), action());
+    }
+  }
+
   function render() {
     if (!state) return;
     const phaseKey = `${state.round}:${state.phase}`;
@@ -418,11 +449,12 @@ import { esc } from './game/text.js';
       if (state.phase === 'explore') badge = player.readyExplore ? 'READY' : 'SURVEYING';
       if (state.phase === 'investigate') badge = (host ? player.investigation !== null : player.investigationLocked) ? 'VOTED' : 'CHOOSING';
       if (state.phase === 'predict') badge = (host ? player.answer !== null : player.hypothesisLocked) ? 'LOCKED' : 'DECIDING';
-      return `<div class="player-row"><div class="avatar">${esc((player.name || '?').slice(0, 1).toUpperCase())}</div><span class="player-name">${esc(player.name)} ${player.id === myId ? '(you)' : ''}</span>${player.host ? '<span class="host-tag">HOST</span>' : ''}${state.phase !== 'lobby' ? `<span class="player-state">${badge}</span>` : ''}</div>`;
+      return `<div class="player-row" title="${esc(player.name)}${player.id === myId ? ' (you)' : ''}${badge ? ` · ${badge}` : ''}"><div class="avatar">${esc((player.name || '?').slice(0, 1).toUpperCase())}</div><span class="player-name">${esc(player.name)} ${player.id === myId ? '(you)' : ''}</span>${player.host ? '<span class="host-tag">HOST</span>' : ''}${state.phase !== 'lobby' ? `<span class="player-state">${badge}</span>` : ''}</div>`;
     }).join('');
     const missionProgress = state.phase === 'lobby' ? 0 : state.phase === 'finished' ? 100 : ((state.round + (state.phase === 'reveal' ? 1 : 0)) / missions.length) * 100;
     const sideNote = state.phase === 'lobby' ? 'Invite 1–7 friends with the room code.' : `Shared research: ${state.teamScore} RP · ${RESEARCH_BUDGET} energy each mission`;
-    game.innerHTML = `<div class="game-layout"><main class="game-main phase-${state.phase}"><div class="room-head"><div><div class="card-kicker">MISSION ROOM</div><div class="room-id">${esc(room || state.room)}</div></div><div class="room-head-tools"><button type="button" id="fullscreenBtn" class="fullscreen-toggle" aria-label="Enter fullscreen" title="Toggle fullscreen">⛶</button><div class="round-meta"><span class="phase-pill">${pill}</span><br/>${state.phase === 'lobby' ? 'READY WHEN YOU ARE' : state.phase === 'finished' ? 'FIELD REPORT COMPLETE' : `MISSION ${String(state.round + 1).padStart(2, '0')} OF 05`}</div></div></div>${content}</main><aside class="sidebar"><div class="sidebar-card"><div class="roster-title"><span>Research crew</span><span>${active.length}/8</span></div>${roster}<div class="progress"><span style="width:${missionProgress}%"></span></div><div class="sidebar-note">${sideNote}</div>${isHost && state.phase === 'lobby' ? '<button id="copyCode" class="copy-code">COPY ROOM CODE ↗</button>' : ''}</div><div class="sidebar-card mission-brief-card"><div class="card-kicker">FIELD NOTES</div><div class="sidebar-note">A discovery is a clue, not a verdict. Spend energy on evidence that can distinguish between competing explanations.</div><div class="crew-scoreline compact"><span>EXPEDITION SCORE</span><strong>${state.teamScore} RP</strong></div></div></aside></div>`;
+    game.innerHTML = `<div class="game-layout"><main class="game-main phase-${state.phase}"><div class="room-head"><div class="room-identity"><span class="room-eyebrow">MISSION ROOM</span><span class="room-id">${esc(room || state.room)}</span></div><div class="room-head-tools"><button type="button" id="fullscreenBtn" class="fullscreen-toggle" aria-label="Enter fullscreen" title="Toggle fullscreen">⛶</button><div class="round-meta"><span class="phase-pill">${pill}</span><br/>${state.phase === 'lobby' ? 'READY WHEN YOU ARE' : state.phase === 'finished' ? 'FIELD REPORT COMPLETE' : `MISSION ${String(state.round + 1).padStart(2, '0')} OF 05`}</div></div></div><div class="crew-bar"><div class="crew-roster"><span class="crew-label">CREW ${active.length}/8</span>${roster}</div><div class="crew-metrics"><span class="crew-score">EXPEDITION · ${state.teamScore} RP</span><span class="crew-note">${esc(sideNote)}</span><i class="crew-progress"><b style="width:${missionProgress}%"></b></i>${isHost && state.phase === 'lobby' ? '<button id="copyCode" class="copy-code">COPY ROOM CODE ↗</button>' : ''}</div><div class="crew-field-note"><b>FIELD NOTE</b><span>A discovery is a clue, not a verdict. Choose evidence that distinguishes competing explanations.</span></div></div><div class="phase-content phase-content-${state.phase}">${content}</div></main></div>`;
+    arrangePhaseContent(game.querySelector('.phase-content'), state.phase);
 
     $('#startBtn')?.addEventListener('click', startMission);
     $('#copyCode')?.addEventListener('click', copyRoom);

@@ -375,3 +375,90 @@ body.mission-mode .phase-content-lobby>.submit-row{position:relative;display:fle
  body.mission-mode .answer-area{height:84px}
 }
 @media(prefers-reduced-motion:reduce){body.mission-mode .phase-content>*{animation:none!important}}
+
+/* Give the crew lobby a cleaner hierarchy and roomier controls. */
+body.mission-mode .topbar{display:none}
+body.mission-mode .game-main{grid-template-rows:38px 82px minmax(0,1fr)}
+body.mission-mode .room-head{height:38px;min-height:38px}
+body.mission-mode .crew-bar{grid-template-columns:minmax(0,1.2fr) minmax(225px,.85fr) minmax(260px,.9fr);min-height:82px;gap:12px;padding:10px 14px}
+body.mission-mode .crew-roster{display:grid;grid-template-columns:auto repeat(4,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));align-items:center;gap:4px 8px;overflow:hidden}
+body.mission-mode .crew-label{font-size:10px;letter-spacing:.08em}
+body.mission-mode .player-row{gap:7px;font-size:11px}
+body.mission-mode .avatar{width:26px;height:26px;border-radius:8px;font-size:10px}
+body.mission-mode .player-name{max-width:150px}
+body.mission-mode .host-tag,body.mission-mode .player-state{font-size:9px}
+body.mission-mode .crew-metrics{gap:6px 10px;padding:0 14px}
+body.mission-mode .crew-score{font-size:12px}
+body.mission-mode .crew-note{font-size:11px;line-height:1.3}
+body.mission-mode .crew-progress{height:4px}
+body.mission-mode .copy-code{padding:6px 9px;font-size:9px}
+body.mission-mode .crew-field-note{gap:10px;padding-left:14px;font-size:11px;line-height:1.4}
+body.mission-mode .crew-field-note b{font-size:9px;letter-spacing:.08em}
+body.mission-mode .phase-content-lobby{gap:18px;padding:30px 18px}
+body.mission-mode .phase-content-lobby>.card-kicker{font-size:11px;letter-spacing:.14em;color:#91a0b4}
+body.mission-mode .phase-content-lobby>.mission-title{font-size:clamp(38px,4.2vw,66px);line-height:1.02;letter-spacing:-.05em;margin:0}
+body.mission-mode .phase-content-lobby>.mission-brief{max-width:900px;font-size:clamp(16px,1.15vw,21px);line-height:1.55;color:#c0c9d6}
+body.mission-mode .phase-content-lobby>.journey-track{position:relative;width:min(100%,1120px);max-width:1120px;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:4px auto;padding:15px 12px 12px;border:1px solid #8293a833;border-radius:12px;background:#091422a8}
+body.mission-mode .phase-content-lobby>.journey-track:before{top:28px;left:10%;right:10%;border-color:#52647b}
+body.mission-mode .phase-content-lobby .journey-stop{gap:8px;color:#aebacc}
+body.mission-mode .phase-content-lobby .journey-node{width:30px;height:30px;font-size:11px;background:#101b2b}
+body.mission-mode .phase-content-lobby .journey-name{font:500 11px/1.3 var(--sans);letter-spacing:0;white-space:normal;color:#c1cbd8}
+body.mission-mode .phase-content-lobby>.lobby-preview{width:min(100%,860px);max-width:860px;justify-content:center;gap:14px;padding:12px 16px;border:1px solid #8293a82a;border-radius:9px;background:#09142296;font:500 11px var(--mono);letter-spacing:.04em;color:#c2cddb}
+body.mission-mode .phase-content-lobby>.lobby-preview b{font-size:16px}
+body.mission-mode .phase-content-lobby>.submit-row{padding:0}
+body.mission-mode .phase-content-lobby>.submit-row .btn{height:48px;padding:0 24px;font-size:14px}
+body.mission-mode .phase-content-lobby>.submit-row .hint{font-size:11px}
+body.mission-mode .room-eyebrow{font-size:10px}
+body.mission-mode .room-id{font-size:16px}
+body.mission-mode .round-meta{font-size:10px}
+body.mission-mode .round-meta .phase-pill{font-size:9px;padding:4px 8px}
+body.mission-mode .crew-roster{display:flex;flex-wrap:wrap;align-content:center;gap:5px 12px}
+body.mission-mode .player-row{flex:0 0 auto}
+body.mission-mode .player-name{max-width:none;font-size:12px}
+body.mission-mode .crew-score{font-size:13px}
+body.mission-mode .crew-note,body.mission-mode .crew-field-note{font-size:12px}
+body.mission-mode .crew-field-note b{font-size:10px}
+
+@media(max-width:900px){
+ body.mission-mode .game-main{grid-template-rows:34px 88px minmax(0,1fr)}
+ body.mission-mode .crew-bar{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:38px auto;min-height:88px;gap:5px 12px;padding:6px 10px}
+ body.mission-mode .crew-roster{grid-column:1/-1;grid-row:1;grid-template-columns:auto repeat(8,minmax(0,1fr));grid-template-rows:1fr;gap:7px;overflow:hidden}
+ body.mission-mode .crew-metrics{grid-column:1;grid-row:2;display:flex;flex-wrap:wrap;gap:5px 9px;padding:0}
+ body.mission-mode .crew-field-note{grid-column:2;grid-row:2;padding-left:8px}
+ body.mission-mode .player-row{flex:0 0 auto;gap:0}
+ body.mission-mode .player-name,body.mission-mode .host-tag,body.mission-mode .player-state{display:none}
+ body.mission-mode .avatar{width:23px;height:23px;border-radius:50%}
+ body.mission-mode .crew-progress{flex:1 0 100%}
+ body.mission-mode .copy-code{font-size:8px}
+ body.mission-mode .crew-score{font-size:11px}
+ body.mission-mode .crew-note,body.mission-mode .crew-field-note{font-size:10px}
+ body.mission-mode .crew-field-note b{font-size:8px}
+ body.mission-mode .phase-content-lobby{gap:14px;padding:18px 12px}
+ body.mission-mode .phase-content-lobby>.journey-track{padding:10px 8px}
+ body.mission-mode .phase-content-lobby>.journey-track:before{top:23px}
+ body.mission-mode .phase-content-lobby .journey-node{width:26px;height:26px;font-size:10px}
+ body.mission-mode .phase-content-lobby .journey-name{font-size:10px}
+}
+@media(max-width:600px){
+ body.mission-mode .game-main{grid-template-rows:30px 78px minmax(0,1fr)}
+ body.mission-mode .crew-bar{grid-template-rows:30px auto;min-height:78px;padding:4px 6px;gap:3px 6px}
+ body.mission-mode .crew-roster{gap:4px;grid-template-columns:auto repeat(8,minmax(0,1fr))}
+ body.mission-mode .crew-label{font-size:8px}
+ body.mission-mode .avatar{width:20px;height:20px;font-size:8px}
+ body.mission-mode .crew-score{font-size:9px}
+ body.mission-mode .crew-note,body.mission-mode .crew-field-note{font-size:8px}
+ body.mission-mode .crew-field-note b{font-size:7px}
+ body.mission-mode .crew-progress{height:3px}
+ body.mission-mode .phase-content-lobby{gap:10px;padding:10px 6px}
+ body.mission-mode .phase-content-lobby>.card-kicker{font-size:8px}
+ body.mission-mode .phase-content-lobby>.mission-title{font-size:clamp(28px,8vw,40px)}
+ body.mission-mode .phase-content-lobby>.mission-brief{font-size:12px;line-height:1.4}
+ body.mission-mode .phase-content-lobby>.journey-track{padding:8px 4px;gap:2px}
+ body.mission-mode .phase-content-lobby>.journey-track:before{top:19px}
+ body.mission-mode .phase-content-lobby .journey-stop{gap:5px}
+ body.mission-mode .phase-content-lobby .journey-node{width:22px;height:22px;font-size:8px}
+ body.mission-mode .phase-content-lobby .journey-name{font-size:8px;line-height:1.15}
+ body.mission-mode .phase-content-lobby>.lobby-preview{gap:5px;padding:8px;font-size:8px}
+ body.mission-mode .phase-content-lobby>.lobby-preview b{font-size:11px}
+ body.mission-mode .phase-content-lobby>.submit-row .btn{height:42px;font-size:12px}
+}

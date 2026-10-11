@@ -3,41 +3,41 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#080d19" />
-  <meta name="description" content="A cooperative fleet mission. Approach a hostile alien planet, break formation under fire, and disable its defense grid together." />
+  <meta name="theme-color" content="#070816" />
+  <meta name="description" content="A cooperative game show where every player receives a different clue—and one fragment is corrupted." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta property="og:title" content="Contact Protocol — Break the Blockade" />
-  <meta property="og:description" content="A cooperative space-combat mission for 2–8 players. Fly your own ship and survive a hostile planetary approach." />
+  <meta property="og:title" content="Contact Protocol — Split-Clue Game Show" />
+  <meta property="og:description" content="Share your evidence, solve the transmission, and find the corrupted clue in this cooperative game for 2–8 players." />
   <meta property="og:image" content="cover.svg" />
-  <title>Contact Protocol — Break the Blockade</title>
+  <title>Contact Protocol — No One Gets the Whole Clue</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./jeopardy.css" />
 
 </head>
 <body>
   <div class="shell">
-    <header class="topbar"><div class="brand"><div class="brand-mark">✳</div> CONTACT PROTOCOL</div><div class="top-status"><i class="dot"></i><span>MISSION CONTROL ONLINE</span></div></header>
+    <header class="topbar"><div class="brand"><div class="brand-mark">✳</div> CONTACT PROTOCOL</div><div class="top-status"><i class="dot"></i><span>THE SIGNAL BOARD IS LIVE</span></div></header>
     <section id="homeView">
       <div class="hero">
-        <div><div class="eyebrow">A cooperative fleet mission</div><h1>Break the<br/><span>blockade.</span></h1><p class="hero-copy">Your fleet is approaching a hostile alien world. Take manual control when the first shot lands, dodge planetary fire, and use complementary ship abilities to keep the formation alive.</p><div class="hero-note"><b>✦</b> 2–8 PILOTS <span>·</span> SHARED BATTLEFIELD <span>·</span> 3–5 MIN</div></div>
-        <div class="signal-art" aria-hidden="true"><div class="orbit"></div><div class="orbit"></div><div class="orbit"></div><div class="planet"></div><i class="star s1"></i><i class="star s2"></i><i class="star s3"></i><i class="star s4"></i><div class="signal-line"><svg viewBox="0 0 500 100" preserveAspectRatio="none"><path class="faint" d="M0 50H500"/><path d="M0 50h73l12-2 8 4 9-5 7 2h37l8-4 8 9 9-12 10 8h42l12-2 8 3 9-4 8 3h38l8-3 9 8 9-12 9 7h45l12-2 8 4 9-4h80"/></svg></div><div class="signal-label">INCOMING TRANSMISSION / 01</div></div>
+        <div><div class="eyebrow">A cooperative split-clue game show</div><h1>No one gets<br/><span>the whole clue.</span></h1><p class="hero-copy">Every screen receives a different piece of the puzzle. Talk it through, choose the crew’s answer, and expose the one corrupted fragment before time runs out.</p><div class="hero-note"><b>✦</b> 2–8 PLAYERS <span>·</span> NO TRIVIA EXPERTISE <span>·</span> 10–15 MIN</div></div>
+        <div class="signal-art" aria-hidden="true"><div class="orbit"></div><div class="orbit"></div><div class="orbit"></div><div class="planet"></div><i class="star s1"></i><i class="star s2"></i><i class="star s3"></i><i class="star s4"></i><div class="signal-line"><svg viewBox="0 0 500 100" preserveAspectRatio="none"><path class="faint" d="M0 50H500"/><path d="M0 50h73l12-2 8 4 9-5 7 2h37l8-4 8 9 9-12 10 8h42l12-2 8 3 9-4 8 3h38l8-3 9 8 9-12 9 7h45l12-2 8 4 9-4h80"/></svg></div><div class="signal-label">ONE SIGNAL · MANY FRAGMENTS</div></div>
       </div>
       <div class="lobby-card">
-        <div class="card-kicker">Assemble the fleet</div><h2>Bring your pilots together.</h2><p>Host a mission or join a fleet preparing to launch.</p>
-        <div class="entry-form"><div><label class="field-label" for="playerName">Your callsign</label><input id="playerName" class="text-input" maxlength="18" placeholder="e.g. Nova" autocomplete="nickname" /></div><div class="actions"><button id="hostBtn" class="btn btn-primary">Create a mission <span>↗</span></button><button id="showJoinBtn" class="btn btn-quiet">Join with a code</button></div><div id="joinFields" class="hidden"><label class="field-label" for="roomCode">Mission room code</label><input id="roomCode" class="text-input code-input" maxlength="6" placeholder="ENTER CODE" autocomplete="off"/><button id="joinBtn" class="btn btn-primary" style="width:100%;margin-top:9px">Join crew ↗</button></div></div>
-        <div class="smallprint">INDEPENDENT SHIPS · SHARED DEFENSES · COOPERATIVE ABILITIES</div>
-        <div class="smallprint">NO DOWNLOAD · NO ACCOUNTS · YOUR CREW'S DEVICES CONNECT DIRECTLY</div>
+        <div class="card-kicker">Open the signal board</div><h2>Bring the crew together.</h2><p>Create a room, share its six-character code, and play from any phone or laptop.</p>
+        <div class="entry-form"><div><label class="field-label" for="playerName">Your player name</label><input id="playerName" class="text-input" maxlength="18" placeholder="e.g. Nova" autocomplete="nickname" /></div><div class="actions"><button id="hostBtn" class="btn btn-primary">Create a room <span>↗</span></button><button id="showJoinBtn" class="btn btn-quiet">Join with a code</button></div><div id="joinFields" class="hidden"><label class="field-label" for="roomCode">Room code</label><input id="roomCode" class="text-input code-input" maxlength="6" placeholder="ENTER CODE" autocomplete="off"/><button id="joinBtn" class="btn btn-primary" style="width:100%;margin-top:9px">Join the game ↗</button></div></div>
+        <div class="smallprint">PRIVATE FRAGMENTS · SHARED ANSWER · ONE HIDDEN GLITCH</div>
+        <div class="smallprint">NO DOWNLOAD · NO ACCOUNTS · PLAYER DEVICES CONNECT DIRECTLY</div>
       </div>
-      <div class="how"><div class="how-card"><div class="how-number">01 / APPROACH</div><h3>Enter on autopilot</h3><p>Watch the fleet descend toward Kharon while mission control types the rules into your cockpit.</p></div><div class="how-card"><div class="how-number">02 / BREAK</div><h3>Take manual control</h3><p>Enemy fire breaks the formation. Steer independently and fire on the nearest threat.</p></div><div class="how-card"><div class="how-number">03 / SURVIVE</div><h3>Use the whole fleet</h3><p>Boost, shield, repair, and strike together before the withdrawal window closes.</p></div></div>
+      <div class="how"><div class="how-card"><div class="how-number">01 / CHOOSE</div><h3>Pick a transmission</h3><p>Take turns choosing from accessible categories built around patterns, reasoning, and observation.</p></div><div class="how-card"><div class="how-number">02 / COMPARE</div><h3>Share what you see</h3><p>Every player receives different evidence. Read it aloud—but remember one fragment is wrong.</p></div><div class="how-card"><div class="how-number">03 / DECIDE</div><h3>Lock it together</h3><p>Vote on the answer and identify the corrupted fragment to earn bonus points as a crew.</p></div></div>
     </section>
     <section id="gameView" class="hidden"></section>
-    <footer class="footer"><span>CONTACT PROTOCOL <span>·</span> KHARON FLEET COMMAND</span><span>STAY TOGETHER. BREAK THE BLOCKADE.</span></footer>
+    <footer class="footer"><span>CONTACT PROTOCOL <span>·</span> SPLIT-CLUE GAME SHOW</span><span>COMPARE NOTES. FIND THE GLITCH.</span></footer>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script type="module" src="./src/combat-app.js"></script>
+  <script type="module" src="./src/jeopardy-app.js"></script>
 
 </body>
 </html>

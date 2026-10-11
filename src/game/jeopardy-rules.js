@@ -1,4 +1,4 @@
-import { CATEGORIES, MAX_ROUNDS } from '../content/clues.js';
+import { BOARD_SIZE, CASE_FILE, CATEGORIES, MAX_ROUNDS } from '../content/case-clues.js';
 
 export function connectedPlayers(state) {
   return state.players.filter((player) => player.connected);
@@ -13,7 +13,8 @@ export function createGame(players) {
     used: [],
     captainId: players[0]?.id || null,
     current: null,
-    history: []
+    history: [],
+    finalResult: null
   };
 }
 
@@ -32,7 +33,7 @@ export function selectClue(game, key, players, now = Date.now()) {
   const { category, clue } = found;
   const assignments = players.map((player, index) => ({
     playerId: player.id,
-    text: clue.fragments[(game.roundNumber + index) % clue.fragments.length]
+    text: clue.fragments[index % clue.fragments.length]
   }));
 
   game.current = {
@@ -45,6 +46,7 @@ export function selectClue(game, key, players, now = Date.now()) {
     options: [...clue.options],
     correctOption: clue.answer,
     explanation: clue.explanation,
+    evidence: clue.evidence,
     assignments,
     startedAt: now,
     duration: 45_000,
@@ -77,9 +79,11 @@ export function revealClue(game, crewAnswer = null) {
   };
   game.history.push({
     key: game.current.key,
+    category: game.current.category,
     value: game.current.value,
     answerCorrect,
-    points
+    points,
+    evidence: game.current.evidence
   });
   game.used.push(game.current.key);
   game.roundNumber += 1;
@@ -89,23 +93,49 @@ export function revealClue(game, crewAnswer = null) {
 
 export function advanceRound(game, players) {
   if (game.phase !== 'reveal') return false;
-  if (game.roundNumber >= game.maxRounds || game.used.length >= 16) {
-    game.phase = 'result';
+  const currentCaptainIndex = Math.max(0, players.findIndex((player) => player.id === game.captainId));
+  game.captainId = players[(currentCaptainIndex + 1) % players.length]?.id || null;
+  if (game.roundNumber >= game.maxRounds || game.used.length >= BOARD_SIZE) {
+    game.phase = 'finale';
     game.current = null;
     return true;
   }
-  const currentCaptainIndex = Math.max(0, players.findIndex((player) => player.id === game.captainId));
-  game.captainId = players[(currentCaptainIndex + 1) % players.length]?.id || null;
   game.current = null;
   game.phase = 'board';
   return true;
 }
 
+export function submitFinalAccusation(game, playerId, guess) {
+  if (game.phase !== 'finale' || game.captainId !== playerId || !guess) return false;
+  const validSuspect = CASE_FILE.suspects.some((option) => option.id === guess.suspect);
+  const validMethod = CASE_FILE.methods.some((option) => option.id === guess.method);
+  const validLocation = CASE_FILE.locations.some((option) => option.id === guess.location);
+  if (!validSuspect || !validMethod || !validLocation) return false;
+
+  const correct = {
+    suspect: guess.suspect === CASE_FILE.solution.suspect,
+    method: guess.method === CASE_FILE.solution.method,
+    location: guess.location === CASE_FILE.solution.location
+  };
+  const solvedParts = Object.values(correct).filter(Boolean).length;
+  const bonus = solvedParts * 200 + (solvedParts === 3 ? 600 : 0);
+  game.score += bonus;
+  game.finalResult = {
+    guess: { suspect: guess.suspect, method: guess.method, location: guess.location },
+    correct,
+    solvedParts,
+    solved: solvedParts === 3,
+    bonus
+  };
+  game.phase = 'result';
+  return true;
+}
+
 export function gameRank(game) {
-  if (game.score >= 2600) return { title: 'First Contact Legends', grade: 'S', detail: 'You read the room—and the stars—perfectly.' };
-  if (game.score >= 1800) return { title: 'Master Signalbreakers', grade: 'A', detail: 'Your crew turned scattered evidence into a clear signal.' };
-  if (game.score >= 1000) return { title: 'Trusted Interpreters', grade: 'B', detail: 'Strong teamwork carried the transmission home.' };
-  return { title: 'Promising Cadets', grade: 'C', detail: 'The archive has more mysteries ready for your next crew.' };
+  if (game.finalResult?.solved && game.score >= 3200) return { title: 'Master Investigators', grade: 'S', detail: 'You reconstructed the theft and recovered The Blue Hour.' };
+  if (game.finalResult?.solved) return { title: 'Case Closed', grade: 'A', detail: 'Your final accusation matches every piece of physical and digital evidence.' };
+  if (game.finalResult?.solvedParts >= 2) return { title: 'Breakthrough Team', grade: 'B', detail: 'Most of your reconstruction was right, but one detail escaped the case file.' };
+  return { title: 'Case Remains Open', grade: 'C', detail: 'Review the reconstruction—the evidence will point more clearly on another attempt.' };
 }
 
 export function stateForPlayer(state, viewerId) {
@@ -116,6 +146,7 @@ export function stateForPlayer(state, viewerId) {
     });
     delete safe.game.current.correctOption;
     delete safe.game.current.explanation;
+    delete safe.game.current.evidence;
   }
   return safe;
 }

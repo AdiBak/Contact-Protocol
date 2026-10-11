@@ -22,10 +22,10 @@
     <text x="90.5" y="97" fill="#64e9e1" font-size="17" text-anchor="middle">✳</text>
     <text x="119" y="97" fill="#edf3f7" font-size="16" font-weight="700" letter-spacing="1.2">CONTACT PROTOCOL</text>
     <path d="M78 184h30" stroke="#64e9e1" stroke-width="2"/>
-    <text x="121" y="189" fill="#64e9e1" font-size="12" letter-spacing="2.4">A COOPERATIVE SPLIT-CLUE GAME SHOW</text>
-    <text x="76" y="278" fill="#f8f5ec" font-size="70" font-weight="500" letter-spacing="-4">No one gets</text>
-    <text x="76" y="354" fill="#ad9cff" font-size="70" font-weight="500" letter-spacing="-4">the whole clue.</text>
-    <text x="80" y="416" fill="#a9b0c5" font-size="19">Share your evidence. Help the Captain solve the signal.</text>
-    <text x="80" y="455" fill="#737b97" font-size="12" font-family="monospace" letter-spacing="1.8">2–8 PLAYERS  ·  PRIVATE FRAGMENTS  ·  SHARED SCORE</text>
+    <text x="121" y="189" fill="#64e9e1" font-size="12" letter-spacing="2.4">A COOPERATIVE MUSEUM INVESTIGATION</text>
+    <text x="76" y="278" fill="#f8f5ec" font-size="65" font-weight="500" letter-spacing="-4">The frame is here.</text>
+    <text x="76" y="354" fill="#ad9cff" font-size="65" font-weight="500" letter-spacing="-4">The painting is not.</text>
+    <text x="80" y="416" fill="#a9b0c5" font-size="19">Follow the records. Reconstruct the theft. Close the case.</text>
+    <text x="80" y="455" fill="#737b97" font-size="12" font-family="monospace" letter-spacing="1.8">2–8 INVESTIGATORS  ·  12 EVIDENCE FILES  ·  1 ACCUSATION</text>
   </g>
 </svg>

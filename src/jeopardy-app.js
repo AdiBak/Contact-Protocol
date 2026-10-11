@@ -1,4 +1,4 @@
-import { CATEGORIES } from './content/clues.js';
+import { CASE_FILE, CATEGORIES } from './content/case-clues.js';
 import {
   answerClue,
   advanceRound,
@@ -7,7 +7,8 @@ import {
   gameRank,
   revealClue,
   selectClue,
-  stateForPlayer
+  stateForPlayer,
+  submitFinalAccusation
 } from './game/jeopardy-rules.js';
 import { esc } from './game/text.js';
 
@@ -116,6 +117,8 @@ import { esc } from './game/text.js';
     } else if (action === 'advance' && state.game?.phase === 'reveal' && state.game.captainId === playerId) {
       advanceRound(state.game, players);
       sendState();
+    } else if (action === 'accuse' && state.game?.phase === 'finale') {
+      if (submitFinalAccusation(state.game, playerId, value)) sendState();
     }
   }
 
@@ -261,6 +264,7 @@ import { esc } from './game/text.js';
       let status = player.host ? 'HOST' : 'CREW';
       if (state.game?.phase === 'board' && player.id === state.game.captainId) status = 'CHOOSING';
       if (state.game?.phase === 'clue') status = player.id === state.game.captainId ? 'DECIDING' : 'SHARING';
+      if (state.game?.phase === 'finale') status = player.id === state.game.captainId ? 'ACCUSING' : 'REVIEWING';
       return `<div class="crew-chip ${player.id === myId ? 'is-me' : ''}">
         <span class="crew-avatar">${esc(player.name.slice(0, 1).toUpperCase())}</span>
         <span><b>${esc(player.name)}${player.id === myId ? ' · YOU' : ''}</b><small>${status}</small></span>
@@ -272,16 +276,16 @@ import { esc } from './game/text.js';
     return `<section class="lobby-stage">
       <div class="lobby-orbit" aria-hidden="true"><span></span><span></span><i>?</i></div>
       <div class="lobby-copy">
-        <span class="stage-kicker">SPLIT-CLUE GAME SHOW</span>
-        <h1>No one gets<br/>the whole clue.</h1>
-        <p>Choose a category, compare the evidence sent to each screen, and help the rotating Captain lock the crew’s answer before time runs out.</p>
+        <span class="stage-kicker">CASE 01 · BELLWEATHER MUSEUM</span>
+        <h1>The frame is here.<br/>The painting is not.</h1>
+        <p>${esc(CASE_FILE.opening)} Work through the evidence together, then reconstruct the theft in one final accusation.</p>
         <div class="rule-row">
           <span><b>01</b> Share your fragment</span>
           <span><b>02</b> Talk it through</span>
           <span><b>03</b> Captain answers</span>
         </div>
         ${isHost
-          ? `<button id="startBtn" class="primary-action" ${players.length < 2 ? 'disabled' : ''}>Start the signal board <span>↗</span></button>`
+          ? `<button id="startBtn" class="primary-action" ${players.length < 2 ? 'disabled' : ''}>Open the case file <span>↗</span></button>`
           : '<div class="waiting-line"><i></i> Waiting for the host to start</div>'}
         <small class="player-requirement">${players.length}/8 players connected · 2 required</small>
       </div>
@@ -296,7 +300,7 @@ import { esc } from './game/text.js';
         const key = `${category.id}:${index}`;
         const used = state.game.used.includes(key);
         return `<button class="board-cell ${used ? 'used' : ''}" data-clue="${key}" ${used || !canChoose ? 'disabled' : ''}>
-          ${used ? '<span>TRANSMITTED</span>' : `<b>${clue.value}</b><span>PTS</span>`}
+          ${used ? '<span>EVIDENCE LOGGED</span>' : `<b>${clue.value}</b><span>PTS</span>`}
         </button>`;
       }).join('');
       return `<div class="board-column">
@@ -306,11 +310,12 @@ import { esc } from './game/text.js';
     }).join('');
     return `<section class="board-stage">
       <div class="stage-heading">
-        <div><span class="stage-kicker">THE SIGNAL BOARD</span><h1>Choose your transmission.</h1></div>
+        <div><span class="stage-kicker">CASE FILE · ${esc(CASE_FILE.object.toUpperCase())}</span><h1>Choose an evidence file.</h1></div>
         <div class="captain-callout"><span>ROUND CAPTAIN</span><b>${esc(captain)}</b><small>${canChoose ? 'Your pick' : 'is choosing'}</small></div>
       </div>
       <div class="category-board">${columns}</div>
-      <p class="board-note">Eight transmissions complete a game. Harder clues are worth more—but wrong answers cost points.</p>
+      <p class="board-note">Complete all twelve files to unlock the final accusation. Harder deductions are worth more.</p>
+      ${state.game.history.length ? `<aside class="case-trail"><span>CASE TRAIL · ${state.game.history.length}/12</span><div>${state.game.history.slice(-4).map((item) => `<p><i>${item.answerCorrect ? '✓' : '•'}</i>${esc(item.evidence)}</p>`).join('')}</div></aside>` : ''}
     </section>`;
   }
 
@@ -327,11 +332,11 @@ import { esc } from './game/text.js';
     const captainName = playerName(state.game.captainId);
     return `<section class="clue-stage">
       <header class="clue-heading">
-        <div><span>${current.icon} ${esc(current.category)}</span><b>${current.value * (current.anomaly ? 2 : 1)} PTS${current.anomaly ? ' · ANOMALY ×2' : ''}</b></div>
+        <div><span>${current.icon} ${esc(current.category)}</span><b>${current.value * (current.anomaly ? 2 : 1)} PTS${current.anomaly ? ' · BREAKTHROUGH ×2' : ''}</b></div>
         <time id="clueClock">0:45</time>
       </header>
       <div class="clue-question">
-        <span>CREW QUESTION</span>
+        <span>CASE QUESTION</span>
         <h1>${esc(current.prompt)}</h1>
         <div class="clue-display">${esc(current.display)}</div>
       </div>
@@ -340,7 +345,7 @@ import { esc } from './game/text.js';
           <span>ONLY ON YOUR SCREEN</span>
           <h2>Your fragment</h2>
           <p>${esc(assignment?.text || 'Fragment unavailable.')}</p>
-          <small>Read this aloud. Every fragment contains useful, trustworthy evidence.</small>
+          <small>Read this aloud. Every fragment comes from a verified case record.</small>
         </article>
         <article class="crew-comms">
           <span>CREW COMMS</span>
@@ -368,15 +373,16 @@ import { esc } from './game/text.js';
     const captain = state.game.captainId === myId;
     return `<section class="reveal-stage">
       <div class="reveal-score ${result.points >= 0 ? 'positive' : 'negative'}">
-        <span>TRANSMISSION RESOLVED</span>
+        <span>EVIDENCE REVIEWED</span>
         <b>${result.points >= 0 ? '+' : ''}${result.points}</b>
         <small>CREW POINTS</small>
       </div>
       <div class="reveal-copy">
         <span class="stage-kicker">${esc(current.category)} · ${current.value} PTS</span>
-        <h1>${result.answerCorrect ? 'Signal understood.' : 'The signal slipped through.'}</h1>
+        <h1>${result.answerCorrect ? 'Deduction confirmed.' : 'Evidence corrected.'}</h1>
         <p class="correct-answer">Correct answer: <b>${esc(current.options[current.correctOption])}</b></p>
         <p>${esc(current.explanation)}</p>
+        <div class="evidence-unlocked"><span>ADDED TO CASE TRAIL</span><b>${esc(current.evidence)}</b></div>
         <div class="result-flags">
           <span class="${result.answerCorrect ? 'success' : 'miss'}">${result.answerCorrect ? '✓' : '×'} Crew answer</span>
         </div>
@@ -390,26 +396,71 @@ import { esc } from './game/text.js';
       </div>
       <div class="next-round">
         ${captain
-          ? '<button id="advanceBtn" class="primary-action">Return to the board <span>↗</span></button>'
+          ? `<button id="advanceBtn" class="primary-action">${state.game.roundNumber >= state.game.maxRounds ? 'Build the final accusation' : 'Return to the evidence board'} <span>↗</span></button>`
           : `<span class="waiting-line"><i></i> Waiting for ${esc(playerName(state.game.captainId))}</span>`}
       </div>
     </section>`;
   }
 
+  function finalOptionsMarkup(kind, options, interactive) {
+    return options.map((option) => `<button class="case-option" ${interactive ? `data-final-kind="${kind}" data-final-id="${option.id}"` : 'disabled'}>
+      <b>${esc(option.name)}</b>${option.role ? `<span>${esc(option.role)}</span>` : ''}
+    </button>`).join('');
+  }
+
+  function finaleMarkup() {
+    const captain = state.game.captainId === myId;
+    const captainName = playerName(state.game.captainId);
+    return `<section class="finale-stage">
+      <header class="finale-heading">
+        <span class="stage-kicker">ALL EVIDENCE COLLECTED</span>
+        <h1>Reconstruct the theft.</h1>
+        <p>Review the case trail together. The final Captain must identify who took ${esc(CASE_FILE.object)}, how it was moved, and where it was hidden.</p>
+      </header>
+      <div class="full-case-trail">
+        ${state.game.history.map((item, index) => `<article><span>${String(index + 1).padStart(2, '0')}</span><div><small>${esc(item.category)}</small><p>${esc(item.evidence)}</p></div></article>`).join('')}
+      </div>
+      ${captain
+        ? `<form id="finaleForm" class="accusation-panel">
+            <fieldset><legend>1 · Who took the painting?</legend><div class="case-options">${finalOptionsMarkup('suspect', CASE_FILE.suspects, true)}</div></fieldset>
+            <fieldset><legend>2 · How was it moved?</legend><div class="case-options">${finalOptionsMarkup('method', CASE_FILE.methods, true)}</div></fieldset>
+            <fieldset><legend>3 · Where was it hidden?</legend><div class="case-options">${finalOptionsMarkup('location', CASE_FILE.locations, true)}</div></fieldset>
+            <button class="primary-action lock-answer" type="submit">Submit the final accusation <span>↗</span></button>
+          </form>`
+        : `<section class="accusation-panel spectator-panel">
+            <span class="stage-kicker">HELP YOUR FINAL CAPTAIN</span><h2>${esc(captainName)} will submit the accusation.</h2><p>Use the case trail to agree on all three parts before the final answer is locked.</p>
+            <fieldset><legend>Who took the painting?</legend><div class="case-options">${finalOptionsMarkup('suspect', CASE_FILE.suspects, false)}</div></fieldset>
+            <fieldset><legend>How was it moved?</legend><div class="case-options">${finalOptionsMarkup('method', CASE_FILE.methods, false)}</div></fieldset>
+            <fieldset><legend>Where was it hidden?</legend><div class="case-options">${finalOptionsMarkup('location', CASE_FILE.locations, false)}</div></fieldset>
+          </section>`}
+    </section>`;
+  }
+
+  function caseLabel(group, id) {
+    return CASE_FILE[group].find((option) => option.id === id)?.name || 'No answer';
+  }
+
   function resultMarkup() {
     const rank = gameRank(state.game);
     const correct = state.game.history.filter((round) => round.answerCorrect).length;
+    const result = state.game.finalResult;
     return `<section class="final-stage">
-      <div class="rank-seal"><span>CREW RANK</span><b>${rank.grade}</b></div>
-      <span class="stage-kicker">FINAL TRANSMISSION COMPLETE</span>
+      <div class="rank-seal"><span>CASE GRADE</span><b>${rank.grade}</b></div>
+      <span class="stage-kicker">${result.solved ? 'THE BLUE HOUR RECOVERED' : 'CASE RECONSTRUCTION COMPLETE'}</span>
       <h1>${rank.title}</h1>
       <p>${rank.detail}</p>
       <div class="final-stats">
         <span><b>${state.game.score}</b> points</span>
-        <span><b>${correct}/${state.game.history.length}</b> signals solved</span>
-        <span><b>${state.game.history.length}</b> transmissions</span>
+        <span><b>${correct}/${state.game.history.length}</b> deductions</span>
+        <span><b>${result.solvedParts}/3</b> final findings</span>
       </div>
-      ${isHost ? '<button id="resetBtn" class="primary-action">Play another board <span>↗</span></button>' : '<div class="waiting-line"><i></i> Waiting for the host</div>'}
+      <div class="verdict-grid">
+        <article class="${result.correct.suspect ? 'correct' : 'incorrect'}"><small>WHO</small><span>Your accusation</span><b>${esc(caseLabel('suspects', result.guess.suspect))}</b><em>Evidence: ${esc(caseLabel('suspects', CASE_FILE.solution.suspect))}</em></article>
+        <article class="${result.correct.method ? 'correct' : 'incorrect'}"><small>HOW</small><span>Your accusation</span><b>${esc(caseLabel('methods', result.guess.method))}</b><em>Evidence: ${esc(caseLabel('methods', CASE_FILE.solution.method))}</em></article>
+        <article class="${result.correct.location ? 'correct' : 'incorrect'}"><small>WHERE</small><span>Your accusation</span><b>${esc(caseLabel('locations', result.guess.location))}</b><em>Evidence: ${esc(caseLabel('locations', CASE_FILE.solution.location))}</em></article>
+      </div>
+      <section class="reconstruction"><span class="stage-kicker">WHAT HAPPENED · 6:12–6:18 PM</span>${CASE_FILE.reconstruction.map((step, index) => `<p><b>${index + 1}</b>${esc(step)}</p>`).join('')}</section>
+      ${isHost ? '<button id="resetBtn" class="primary-action">Reopen the case <span>↗</span></button>' : '<div class="waiting-line"><i></i> Waiting for the host</div>'}
     </section>`;
   }
 
@@ -444,6 +495,26 @@ import { esc } from './game/text.js';
     });
   }
 
+  function bindFinaleForm() {
+    const form = $('#finaleForm');
+    if (!form) return;
+    const guess = { suspect: null, method: null, location: null };
+    form.querySelectorAll('[data-final-kind]').forEach((button) => button.addEventListener('click', (event) => {
+      event.preventDefault();
+      const kind = button.dataset.finalKind;
+      guess[kind] = button.dataset.finalId;
+      form.querySelectorAll(`[data-final-kind="${kind}"]`).forEach((item) => item.classList.toggle('selected', item === button));
+    }));
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!guess.suspect || !guess.method || !guess.location) {
+        toast('Complete all three parts of the accusation.');
+        return;
+      }
+      sendAction('accuse', guess);
+    });
+  }
+
   function render() {
     if (!state) return;
     clearInterval(clockTimer);
@@ -453,6 +524,7 @@ import { esc } from './game/text.js';
     else if (state.game.phase === 'board') content = boardMarkup(players);
     else if (state.game.phase === 'clue') content = clueMarkup(players);
     else if (state.game.phase === 'reveal') content = revealMarkup(players);
+    else if (state.game.phase === 'finale') content = finaleMarkup();
     else content = resultMarkup();
 
     const score = state.game?.score || 0;
@@ -485,6 +557,7 @@ import { esc } from './game/text.js';
       }
     });
     bindAnswerForm();
+    bindFinaleForm();
     if (state.game?.phase === 'clue') {
       updateClock();
       clockTimer = setInterval(updateClock, 250);

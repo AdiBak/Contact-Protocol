@@ -1,4 +1,4 @@
-# Contact Protocol
+# The Evidence Room
 
 **A cooperative investigation library for 2–8 players.** Vote on a category, choose one of five unique cases, share private evidence, and reconstruct a real outcome together.
 

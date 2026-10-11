@@ -589,7 +589,7 @@ import { esc } from './game/text.js';
     const round = state.game ? Math.min(state.game.roundNumber + (state.game.phase === 'reveal' ? 0 : 1), state.game.maxRounds) : 0;
     gameRoot.innerHTML = `<main class="game-shell">
       <header class="game-header">
-        <a class="mini-brand" href="/" aria-label="Contact Protocol home"><i>✳</i><span>CONTACT<br/>PROTOCOL</span></a>
+        <a class="mini-brand" href="/" aria-label="The Evidence Room home"><i>✳</i><span>THE EVIDENCE<br/>ROOM</span></a>
         <div class="room-tools"><span>ROOM</span><b>${esc(room || state.room)}</b><button id="copyCode" type="button">COPY ↗</button></div>
         <div class="game-metrics">
           <span><small>${state.selection && !state.game ? 'SELECTION' : 'ROUND'}</small><b>${state.game ? `${round}/${state.game.maxRounds}` : state.selection ? 'VOTE' : 'LOBBY'}</b></span>

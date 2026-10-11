@@ -15,9 +15,8 @@ export const CATEGORIES = [
           'Each group contains one more pulse than the last.',
           'The first three groups contain 1, 2, and 3 pulses.',
           'The spacing between groups does not change.',
-          'CORRUPTED: Every group should contain an odd number of pulses.'
+          'Only the number of pulses changes from group to group.'
         ],
-        corrupt: 3,
         explanation: 'The groups increase by one pulse: 1, 2, 3, then 4.'
       },
       {
@@ -30,9 +29,8 @@ export const CATEGORIES = [
           'The transmission repeats in groups of three.',
           'Every triangle is followed by two circles.',
           'Positions 1, 4, and 7 match.',
-          'CORRUPTED: A triangle always follows another triangle.'
+          'Position eight continues the same three-symbol loop.'
         ],
-        corrupt: 3,
         explanation: 'The repeating unit is triangle, circle, circle.'
       },
       {
@@ -45,9 +43,8 @@ export const CATEGORIES = [
           'The number tracks a visible property of the written word.',
           'BLUE has four letters and GREEN has five.',
           'No arithmetic is needed.',
-          'CORRUPTED: The number counts curved letters.'
+          'GOLD is written with four letters.'
         ],
-        corrupt: 3,
         explanation: 'Each number is simply the number of letters in the color.'
       },
       {
@@ -60,9 +57,8 @@ export const CATEGORIES = [
           'The sequence restarts after four flashes.',
           'The fourth flash was C.',
           'Flashes five through seven match flashes one through three.',
-          'CORRUPTED: The beacons are in alphabetical order.'
+          'After D, the repeating sequence returns to C.'
         ],
-        corrupt: 3,
         explanation: 'The four-beacon sequence A–B–D–C repeats, so the eighth is C.'
       }
     ]
@@ -83,9 +79,8 @@ export const CATEGORIES = [
           'The archive shows honored gifts received with two hands.',
           'Mirroring a peaceful gesture is considered respectful.',
           'The visitor is standing calmly and has lowered their guard.',
-          'CORRUPTED: Velari greetings always begin with throwing objects.'
+          'Archive notes describe the glowing stone as a peaceful welcome gift.'
         ],
-        corrupt: 3,
         explanation: 'The examples establish that mirroring the two-handed gesture is respectful.'
       },
       {
@@ -98,9 +93,8 @@ export const CATEGORIES = [
           'Empty plates imply the host did not provide enough.',
           'Past banquets end with one ceremonial bite remaining.',
           'Guests thank the host after leaving the final bite.',
-          'CORRUPTED: Zorians cannot see the last bite on a plate.'
+          'Zorian hosts interpret an empty plate as a request for more food.'
         ],
-        corrupt: 3,
         explanation: 'Leaving a little food indicates that the host provided more than enough.'
       },
       {
@@ -113,9 +107,8 @@ export const CATEGORIES = [
           'Kesh records call the pause “the space for thought.”',
           'Interruptions ended two previous negotiations early.',
           'The ambassador maintains friendly eye contact during the pause.',
-          'CORRUPTED: Silence means the translator has stopped working.'
+          'The translator reports no technical problem during the pause.'
         ],
-        corrupt: 3,
         explanation: 'The pause is a deliberate sign of thoughtful respect, not confusion.'
       },
       {
@@ -128,16 +121,15 @@ export const CATEGORIES = [
           'Water marks private quarters.',
           'Flame marks kitchens and workshops.',
           'Public spaces use an unfilled circle.',
-          'CORRUPTED: Council chambers are always below a flame symbol.'
+          'The council chamber is listed as a public gathering space.'
         ],
-        corrupt: 3,
         explanation: 'The unfilled circle consistently marks public gathering spaces.'
       }
     ]
   },
   {
     id: 'oddity',
-    name: 'Spot the Glitch',
+    name: 'Mission Logic',
     icon: '◫',
     description: 'One detail does not belong.',
     clues: [
@@ -151,9 +143,8 @@ export const CATEGORIES = [
           'Loose liquids form drifting blobs in zero gravity.',
           'Small tools are normally tethered so they cannot float away.',
           'Magnetic bases can hold containers to metal surfaces.',
-          'CORRUPTED: Water always stays flat without gravity.'
+          'Open containers are avoided because their contents can drift out.'
         ],
-        corrupt: 3,
         explanation: 'An open fishbowl would release floating water throughout the cabin.'
       },
       {
@@ -166,9 +157,8 @@ export const CATEGORIES = [
           'The entries describe one visitor’s trip in chronological order.',
           'A departure must occur after the meeting.',
           'The timestamps use the same local clock.',
-          'CORRUPTED: The meeting began before the visitor arrived.'
+          'The meeting record confirms the visitor was present at 08:14.'
         ],
-        corrupt: 3,
         explanation: 'The visitor cannot depart at 08:09 and then attend the 08:14 meeting.'
       },
       {
@@ -181,9 +171,8 @@ export const CATEGORIES = [
           'The station is on the night side of its planet.',
           'Exterior cameras also show darkness.',
           'The clock and window agree that it is local night.',
-          'CORRUPTED: High sunlight is expected in the middle of the night.'
+          'A functioning sunlight sensor should agree with the exterior cameras.'
         ],
-        corrupt: 3,
         explanation: 'The sunlight reading contradicts both independent signs that it is night.'
       },
       {
@@ -196,9 +185,8 @@ export const CATEGORIES = [
           'The crate is rigid and cannot be folded.',
           'The doorway has no removable panels.',
           'The measurements use the same unit.',
-          'CORRUPTED: A rigid 2 m object always fits through a 1 m opening.'
+          'Nothing in the cargo log indicates that another entrance was used.'
         ],
-        corrupt: 3,
         explanation: 'Given the fixed dimensions, the intact crate could not pass through that door.'
       }
     ]
@@ -219,9 +207,8 @@ export const CATEGORIES = [
           'Light travels roughly 300,000 km each second.',
           'Earth is roughly 40,000 km around.',
           'The trip is much shorter than one second.',
-          'CORRUPTED: Light needs several minutes to cross a city.'
+          'Dividing 40,000 by 300,000 gives a value well below one.'
         ],
-        corrupt: 3,
         explanation: '40,000 ÷ 300,000 is about 0.13 seconds.'
       },
       {
@@ -234,9 +221,8 @@ export const CATEGORIES = [
           'Jupiter’s diameter is about 140,000 km.',
           'Earth’s diameter is about 12,700 km.',
           'The larger number is roughly eleven times the smaller.',
-          'CORRUPTED: Jupiter and Earth are almost the same width.'
+          'Ten Earth diameters would be slightly narrower than Jupiter.'
         ],
-        corrupt: 3,
         explanation: 'Jupiter is approximately eleven Earth diameters wide.'
       },
       {
@@ -249,9 +235,8 @@ export const CATEGORIES = [
           'Six kilometers equals 6,000 meters.',
           'Ten minutes covers 1,000 meters.',
           'Sixty groups of 100 meters make 6,000.',
-          'CORRUPTED: One kilometer equals 100 meters.'
+          'One kilometer equals 1,000 meters.'
         ],
-        corrupt: 3,
         explanation: '6,000 meters at 100 meters per minute takes 60 minutes.'
       },
       {
@@ -264,9 +249,8 @@ export const CATEGORIES = [
           'The whole crew consumes eight packs every six hours.',
           'Forty-eight packs provide six complete rounds.',
           'Six rounds multiplied by six hours gives 36 hours.',
-          'CORRUPTED: All eight people share one pack per six hours.'
+          'Each of the eight crew members needs their own pack.'
         ],
-        corrupt: 3,
         explanation: 'The crew gets six rounds of packs, each lasting six hours: 36 hours.'
       }
     ]

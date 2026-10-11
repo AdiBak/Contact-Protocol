@@ -1,14 +1,13 @@
 import { CATEGORIES } from './content/clues.js';
 import {
+  answerClue,
   advanceRound,
-  allVoted,
   connectedPlayers,
   createGame,
   gameRank,
   revealClue,
   selectClue,
-  stateForPlayer,
-  submitVote
+  stateForPlayer
 } from './game/jeopardy-rules.js';
 import { esc } from './game/text.js';
 
@@ -112,10 +111,8 @@ import { esc } from './game/text.js';
 
     if (action === 'select' && state.game?.captainId === playerId) {
       if (selectClue(state.game, value, players)) sendState();
-    } else if (action === 'vote' && state.game?.phase === 'clue') {
-      if (!submitVote(state.game, playerId, value?.answer, value?.suspectId)) return;
-      if (allVoted(state.game, players)) revealClue(state.game);
-      sendState();
+    } else if (action === 'answer' && state.game?.phase === 'clue') {
+      if (answerClue(state.game, playerId, value?.answer)) sendState();
     } else if (action === 'advance' && state.game?.phase === 'reveal' && state.game.captainId === playerId) {
       advanceRound(state.game, players);
       sendState();
@@ -165,7 +162,6 @@ import { esc } from './game/text.js';
       const player = state.players.find((candidate) => candidate.peerId === conn.peer);
       if (player) player.connected = false;
       ensureCaptain();
-      if (state.game?.phase === 'clue' && allVoted(state.game, connectedPlayers(state))) revealClue(state.game);
       sendState();
     });
     conn.on('error', () => toast('A player connection dropped.'));
@@ -261,11 +257,10 @@ import { esc } from './game/text.js';
   }
 
   function crewMarkup(players) {
-    const votes = state.game?.current?.votes || {};
     return players.map((player) => {
       let status = player.host ? 'HOST' : 'CREW';
       if (state.game?.phase === 'board' && player.id === state.game.captainId) status = 'CHOOSING';
-      if (state.game?.phase === 'clue') status = votes[player.id] ? 'LOCKED' : 'THINKING';
+      if (state.game?.phase === 'clue') status = player.id === state.game.captainId ? 'DECIDING' : 'SHARING';
       return `<div class="crew-chip ${player.id === myId ? 'is-me' : ''}">
         <span class="crew-avatar">${esc(player.name.slice(0, 1).toUpperCase())}</span>
         <span><b>${esc(player.name)}${player.id === myId ? ' · YOU' : ''}</b><small>${status}</small></span>
@@ -279,11 +274,11 @@ import { esc } from './game/text.js';
       <div class="lobby-copy">
         <span class="stage-kicker">SPLIT-CLUE GAME SHOW</span>
         <h1>No one gets<br/>the whole clue.</h1>
-        <p>Choose a category, compare the evidence sent to each screen, and expose the one corrupted fragment before time runs out.</p>
+        <p>Choose a category, compare the evidence sent to each screen, and help the rotating Captain lock the crew’s answer before time runs out.</p>
         <div class="rule-row">
           <span><b>01</b> Share your fragment</span>
-          <span><b>02</b> Agree on an answer</span>
-          <span><b>03</b> Find the glitch</span>
+          <span><b>02</b> Talk it through</span>
+          <span><b>03</b> Captain answers</span>
         </div>
         ${isHost
           ? `<button id="startBtn" class="primary-action" ${players.length < 2 ? 'disabled' : ''}>Start the signal board <span>↗</span></button>`
@@ -319,23 +314,17 @@ import { esc } from './game/text.js';
     </section>`;
   }
 
-  function choiceMarkup(current, myVote) {
-    return current.options.map((option, index) => `<button class="answer-choice ${myVote?.answer === index ? 'selected' : ''}" data-answer="${index}" ${myVote ? 'disabled' : ''}>
+  function choiceMarkup(current, interactive) {
+    return current.options.map((option, index) => `<button class="answer-choice" ${interactive ? `data-answer="${index}"` : 'disabled'}>
       <span>${String.fromCharCode(65 + index)}</span><b>${esc(option)}</b>
-    </button>`).join('');
-  }
-
-  function suspectMarkup(current, players, myVote) {
-    return players.map((player) => `<button class="suspect-choice ${myVote?.suspectId === player.id ? 'selected' : ''}" data-suspect="${esc(player.id)}" ${myVote ? 'disabled' : ''}>
-      <span>${esc(player.name.slice(0, 1).toUpperCase())}</span>${esc(player.name)}${player.id === myId ? ' (you)' : ''}
     </button>`).join('');
   }
 
   function clueMarkup(players) {
     const current = state.game.current;
     const assignment = current.assignments.find((item) => item.playerId === myId);
-    const myVote = current.votes[myId];
-    const voted = Object.keys(current.votes).length;
+    const captain = state.game.captainId === myId;
+    const captainName = playerName(state.game.captainId);
     return `<section class="clue-stage">
       <header class="clue-heading">
         <div><span>${current.icon} ${esc(current.category)}</span><b>${current.value * (current.anomaly ? 2 : 1)} PTS${current.anomaly ? ' · ANOMALY ×2' : ''}</b></div>
@@ -351,19 +340,25 @@ import { esc } from './game/text.js';
           <span>ONLY ON YOUR SCREEN</span>
           <h2>Your fragment</h2>
           <p>${esc(assignment?.text || 'Fragment unavailable.')}</p>
-          <small>Read this aloud. One player’s fragment has been corrupted.</small>
+          <small>Read this aloud. Every fragment contains useful, trustworthy evidence.</small>
         </article>
         <article class="crew-comms">
           <span>CREW COMMS</span>
-          <h2>${voted}/${players.length} answers locked</h2>
-          <div>${players.map((player) => `<i class="${current.votes[player.id] ? 'locked' : ''}"><b>${esc(player.name.slice(0, 1).toUpperCase())}</b><small>${current.votes[player.id] ? 'LOCKED' : 'THINKING'}</small></i>`).join('')}</div>
+          <h2>${esc(captainName)} is Captain</h2>
+          <div>${players.map((player) => `<i class="${player.id === state.game.captainId ? 'locked' : ''}"><b>${esc(player.name.slice(0, 1).toUpperCase())}</b><small>${player.id === state.game.captainId ? 'CAPTAIN' : 'SHARE INTEL'}</small></i>`).join('')}</div>
         </article>
       </div>
-      <form id="voteForm" class="vote-panel">
-        <fieldset><legend>1 · Choose the crew’s answer</legend><div class="answer-list">${choiceMarkup(current, myVote)}</div></fieldset>
-        <fieldset><legend>2 · Whose fragment is the glitch?</legend><div class="suspect-list">${suspectMarkup(current, players, myVote)}</div></fieldset>
-        <button id="lockBtn" class="primary-action lock-answer" type="submit" ${myVote ? 'disabled' : ''}>${myVote ? 'Answer locked ✓' : 'Lock both choices'}</button>
-      </form>
+      ${captain
+        ? `<form id="answerForm" class="vote-panel">
+            <fieldset><legend>You are Captain · Choose the crew’s final answer</legend><div class="answer-list">${choiceMarkup(current, true)}</div></fieldset>
+            <button id="lockBtn" class="primary-action lock-answer" type="submit">Lock the crew’s answer</button>
+          </form>`
+        : `<section class="vote-panel spectator-panel">
+            <span class="stage-kicker">HELP YOUR CAPTAIN</span>
+            <h2>Tell ${esc(captainName)} what you found.</h2>
+            <p>Discuss the options together. Only the Captain submits the final answer this round.</p>
+            <div class="answer-list">${choiceMarkup(current, false)}</div>
+          </section>`}
     </section>`;
   }
 
@@ -384,13 +379,12 @@ import { esc } from './game/text.js';
         <p>${esc(current.explanation)}</p>
         <div class="result-flags">
           <span class="${result.answerCorrect ? 'success' : 'miss'}">${result.answerCorrect ? '✓' : '×'} Crew answer</span>
-          <span class="${result.glitchCorrect ? 'success' : 'miss'}">${result.glitchCorrect ? '✓' : '×'} Glitch detected</span>
         </div>
       </div>
       <div class="fragment-reveal">
-        <span>WHAT EVERYONE RECEIVED</span>
-        ${current.assignments.map((assignment) => `<article class="${assignment.corrupted ? 'corrupted' : ''}">
-          <header><b>${esc(playerName(assignment.playerId))}</b><small>${assignment.corrupted ? 'CORRUPTED' : 'VERIFIED'}</small></header>
+        <span>THE COMPLETE EVIDENCE</span>
+        ${current.assignments.map((assignment) => `<article>
+          <header><b>${esc(playerName(assignment.playerId))}</b><small>VERIFIED</small></header>
           <p>${esc(assignment.text)}</p>
         </article>`).join('')}
       </div>
@@ -405,7 +399,6 @@ import { esc } from './game/text.js';
   function resultMarkup() {
     const rank = gameRank(state.game);
     const correct = state.game.history.filter((round) => round.answerCorrect).length;
-    const glitches = state.game.history.filter((round) => round.glitchCorrect).length;
     return `<section class="final-stage">
       <div class="rank-seal"><span>CREW RANK</span><b>${rank.grade}</b></div>
       <span class="stage-kicker">FINAL TRANSMISSION COMPLETE</span>
@@ -414,7 +407,7 @@ import { esc } from './game/text.js';
       <div class="final-stats">
         <span><b>${state.game.score}</b> points</span>
         <span><b>${correct}/${state.game.history.length}</b> signals solved</span>
-        <span><b>${glitches}/${state.game.history.length}</b> glitches found</span>
+        <span><b>${state.game.history.length}</b> transmissions</span>
       </div>
       ${isHost ? '<button id="resetBtn" class="primary-action">Play another board <span>↗</span></button>' : '<div class="waiting-line"><i></i> Waiting for the host</div>'}
     </section>`;
@@ -432,28 +425,22 @@ import { esc } from './game/text.js';
     }
   }
 
-  function bindVoteForm() {
-    const form = $('#voteForm');
-    if (!form || state.game.current.votes[myId]) return;
+  function bindAnswerForm() {
+    const form = $('#answerForm');
+    if (!form) return;
     let selectedAnswer = null;
-    let selectedSuspect = null;
     form.querySelectorAll('[data-answer]').forEach((button) => button.addEventListener('click', (event) => {
       event.preventDefault();
       selectedAnswer = Number(button.dataset.answer);
       form.querySelectorAll('[data-answer]').forEach((item) => item.classList.toggle('selected', item === button));
     }));
-    form.querySelectorAll('[data-suspect]').forEach((button) => button.addEventListener('click', (event) => {
-      event.preventDefault();
-      selectedSuspect = button.dataset.suspect;
-      form.querySelectorAll('[data-suspect]').forEach((item) => item.classList.toggle('selected', item === button));
-    }));
     form.addEventListener('submit', (event) => {
       event.preventDefault();
-      if (selectedAnswer === null || !selectedSuspect) {
-        toast('Choose an answer and identify the glitch.');
+      if (selectedAnswer === null) {
+        toast('Choose the crew’s answer first.');
         return;
       }
-      sendAction('vote', { answer: selectedAnswer, suspectId: selectedSuspect });
+      sendAction('answer', { answer: selectedAnswer });
     });
   }
 
@@ -497,7 +484,7 @@ import { esc } from './game/text.js';
         toast('Fullscreen is unavailable here.');
       }
     });
-    bindVoteForm();
+    bindAnswerForm();
     if (state.game?.phase === 'clue') {
       updateClock();
       clockTimer = setInterval(updateClock, 250);

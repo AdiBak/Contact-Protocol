@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#070816" />
-  <meta name="description" content="A cooperative game show where every player receives a different clue—and one fragment is corrupted." />
+  <meta name="description" content="A cooperative game show where every player receives a different clue and a rotating Captain answers for the crew." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta property="og:title" content="Contact Protocol — Split-Clue Game Show" />
-  <meta property="og:description" content="Share your evidence, solve the transmission, and find the corrupted clue in this cooperative game for 2–8 players." />
+  <meta property="og:description" content="Share your evidence and help the rotating Captain solve each transmission in this cooperative game for 2–8 players." />
   <meta property="og:image" content="cover.svg" />
   <title>Contact Protocol — No One Gets the Whole Clue</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,19 +22,19 @@
     <header class="topbar"><div class="brand"><div class="brand-mark">✳</div> CONTACT PROTOCOL</div><div class="top-status"><i class="dot"></i><span>THE SIGNAL BOARD IS LIVE</span></div></header>
     <section id="homeView">
       <div class="hero">
-        <div><div class="eyebrow">A cooperative split-clue game show</div><h1>No one gets<br/><span>the whole clue.</span></h1><p class="hero-copy">Every screen receives a different piece of the puzzle. Talk it through, choose the crew’s answer, and expose the one corrupted fragment before time runs out.</p><div class="hero-note"><b>✦</b> 2–8 PLAYERS <span>·</span> NO TRIVIA EXPERTISE <span>·</span> 10–15 MIN</div></div>
+        <div><div class="eyebrow">A cooperative split-clue game show</div><h1>No one gets<br/><span>the whole clue.</span></h1><p class="hero-copy">Every screen receives a different piece of the puzzle. Share what you found and help the rotating Captain lock the crew’s answer before time runs out.</p><div class="hero-note"><b>✦</b> 2–8 PLAYERS <span>·</span> NO TRIVIA EXPERTISE <span>·</span> 10–15 MIN</div></div>
         <div class="signal-art" aria-hidden="true"><div class="orbit"></div><div class="orbit"></div><div class="orbit"></div><div class="planet"></div><i class="star s1"></i><i class="star s2"></i><i class="star s3"></i><i class="star s4"></i><div class="signal-line"><svg viewBox="0 0 500 100" preserveAspectRatio="none"><path class="faint" d="M0 50H500"/><path d="M0 50h73l12-2 8 4 9-5 7 2h37l8-4 8 9 9-12 10 8h42l12-2 8 3 9-4 8 3h38l8-3 9 8 9-12 9 7h45l12-2 8 4 9-4h80"/></svg></div><div class="signal-label">ONE SIGNAL · MANY FRAGMENTS</div></div>
       </div>
       <div class="lobby-card">
         <div class="card-kicker">Open the signal board</div><h2>Bring the crew together.</h2><p>Create a room, share its six-character code, and play from any phone or laptop.</p>
         <div class="entry-form"><div><label class="field-label" for="playerName">Your player name</label><input id="playerName" class="text-input" maxlength="18" placeholder="e.g. Nova" autocomplete="nickname" /></div><div class="actions"><button id="hostBtn" class="btn btn-primary">Create a room <span>↗</span></button><button id="showJoinBtn" class="btn btn-quiet">Join with a code</button></div><div id="joinFields" class="hidden"><label class="field-label" for="roomCode">Room code</label><input id="roomCode" class="text-input code-input" maxlength="6" placeholder="ENTER CODE" autocomplete="off"/><button id="joinBtn" class="btn btn-primary" style="width:100%;margin-top:9px">Join the game ↗</button></div></div>
-        <div class="smallprint">PRIVATE FRAGMENTS · SHARED ANSWER · ONE HIDDEN GLITCH</div>
+        <div class="smallprint">PRIVATE EVIDENCE · ROTATING CAPTAIN · SHARED SCORE</div>
         <div class="smallprint">NO DOWNLOAD · NO ACCOUNTS · PLAYER DEVICES CONNECT DIRECTLY</div>
       </div>
-      <div class="how"><div class="how-card"><div class="how-number">01 / CHOOSE</div><h3>Pick a transmission</h3><p>Take turns choosing from accessible categories built around patterns, reasoning, and observation.</p></div><div class="how-card"><div class="how-number">02 / COMPARE</div><h3>Share what you see</h3><p>Every player receives different evidence. Read it aloud—but remember one fragment is wrong.</p></div><div class="how-card"><div class="how-number">03 / DECIDE</div><h3>Lock it together</h3><p>Vote on the answer and identify the corrupted fragment to earn bonus points as a crew.</p></div></div>
+      <div class="how"><div class="how-card"><div class="how-number">01 / CHOOSE</div><h3>Captain picks a tile</h3><p>The Captain chooses from accessible categories built around patterns, reasoning, and observation.</p></div><div class="how-card"><div class="how-number">02 / COMPARE</div><h3>Share what you see</h3><p>Every player receives useful evidence. Read it aloud so the crew can assemble the complete clue.</p></div><div class="how-card"><div class="how-number">03 / DECIDE</div><h3>Captain locks it in</h3><p>Discuss the options together, then the rotating Captain submits one final answer for the crew.</p></div></div>
     </section>
     <section id="gameView" class="hidden"></section>
-    <footer class="footer"><span>CONTACT PROTOCOL <span>·</span> SPLIT-CLUE GAME SHOW</span><span>COMPARE NOTES. FIND THE GLITCH.</span></footer>
+    <footer class="footer"><span>CONTACT PROTOCOL <span>·</span> SPLIT-CLUE GAME SHOW</span><span>SHARE THE CLUES. SOLVE TOGETHER.</span></footer>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="./src/jeopardy-app.js"></script>

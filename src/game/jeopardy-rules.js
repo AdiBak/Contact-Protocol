@@ -30,16 +30,10 @@ export function selectClue(game, key, players, now = Date.now()) {
   if (!found || players.length < 1) return false;
 
   const { category, clue } = found;
-  const corruptPlayerIndex = game.roundNumber % players.length;
-  const trueFragments = clue.fragments.filter((_, index) => index !== clue.corrupt);
-  let trueIndex = game.roundNumber;
-  const assignments = players.map((player, index) => {
-    const corrupted = index === corruptPlayerIndex;
-    const text = corrupted
-      ? clue.fragments[clue.corrupt].replace(/^CORRUPTED:\s*/i, '')
-      : trueFragments[trueIndex++ % trueFragments.length];
-    return { playerId: player.id, text, corrupted };
-  });
+  const assignments = players.map((player, index) => ({
+    playerId: player.id,
+    text: clue.fragments[(game.roundNumber + index) % clue.fragments.length]
+  }));
 
   game.current = {
     key,
@@ -52,7 +46,6 @@ export function selectClue(game, key, players, now = Date.now()) {
     correctOption: clue.answer,
     explanation: clue.explanation,
     assignments,
-    votes: {},
     startedAt: now,
     duration: 45_000,
     anomaly: game.roundNumber === 3,
@@ -62,55 +55,30 @@ export function selectClue(game, key, players, now = Date.now()) {
   return true;
 }
 
-export function submitVote(game, playerId, answer, suspectId) {
+export function answerClue(game, playerId, answer) {
   if (game.phase !== 'clue' || !game.current) return false;
-  if (!game.current.assignments.some((assignment) => assignment.playerId === playerId)) return false;
+  if (game.captainId !== playerId) return false;
   const option = Number(answer);
   if (!Number.isInteger(option) || option < 0 || option >= game.current.options.length) return false;
-  if (!game.current.assignments.some((assignment) => assignment.playerId === suspectId)) return false;
-  game.current.votes[playerId] = { answer: option, suspectId };
-  return true;
+  return revealClue(game, option);
 }
 
-export function allVoted(game, players) {
-  return players.length > 0 && players.every((player) => game.current?.votes[player.id]);
-}
-
-function uniquePlurality(values) {
-  const counts = new Map();
-  values.forEach((value) => counts.set(value, (counts.get(value) || 0) + 1));
-  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
-  if (!sorted.length || (sorted[1] && sorted[0][1] === sorted[1][1])) return null;
-  return sorted[0][0];
-}
-
-export function revealClue(game) {
+export function revealClue(game, crewAnswer = null) {
   if (game.phase !== 'clue' || !game.current) return false;
-  const votes = Object.values(game.current.votes);
-  const crewAnswer = uniquePlurality(votes.map((vote) => vote.answer));
-  const crewSuspect = uniquePlurality(votes.map((vote) => vote.suspectId));
-  const corruptPlayer = game.current.assignments.find((assignment) => assignment.corrupted)?.playerId;
   const answerCorrect = crewAnswer === game.current.correctOption;
-  const glitchCorrect = crewSuspect === corruptPlayer;
   const multiplier = game.current.anomaly ? 2 : 1;
-  const answerPoints = answerCorrect ? game.current.value * multiplier : -Math.ceil(game.current.value / 4);
-  const glitchPoints = glitchCorrect ? Math.ceil(game.current.value / 2) : 0;
-  const points = answerPoints + glitchPoints;
+  const points = answerCorrect ? game.current.value * multiplier : -Math.ceil(game.current.value / 4);
 
   game.score = Math.max(0, game.score + points);
   game.current.result = {
     crewAnswer,
-    crewSuspect,
-    corruptPlayer,
     answerCorrect,
-    glitchCorrect,
     points
   };
   game.history.push({
     key: game.current.key,
     value: game.current.value,
     answerCorrect,
-    glitchCorrect,
     points
   });
   game.used.push(game.current.key);
@@ -145,10 +113,6 @@ export function stateForPlayer(state, viewerId) {
   if (safe.game?.phase === 'clue' && safe.game.current) {
     safe.game.current.assignments.forEach((assignment) => {
       if (assignment.playerId !== viewerId) delete assignment.text;
-      delete assignment.corrupted;
-    });
-    Object.entries(safe.game.current.votes).forEach(([playerId, vote]) => {
-      if (playerId !== viewerId) safe.game.current.votes[playerId] = { locked: Boolean(vote) };
     });
     delete safe.game.current.correctOption;
     delete safe.game.current.explanation;

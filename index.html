@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#070816" />
-  <meta name="description" content="Solve a grounded museum mystery together. Share private evidence, build the case, and reconstruct the theft." />
+  <meta name="description" content="A cooperative investigation library. Vote on a category, choose a case, share private evidence, and reach a real outcome together." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <meta property="og:title" content="Contact Protocol — The Missing Masterpiece" />
-  <meta property="og:description" content="A cooperative museum investigation for 2–8 players. Follow the evidence and solve the final accusation." />
+  <meta property="og:title" content="Contact Protocol — Choose the Case" />
+  <meta property="og:description" content="25 authored cases across mystery, space, biology, geography, and everyday reasoning. Vote, investigate, and close the outcome." />
   <meta property="og:image" content="cover.svg" />
-  <title>Contact Protocol — The Missing Masterpiece</title>
+  <title>Contact Protocol — Choose the Case</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -19,22 +19,22 @@
 </head>
 <body>
   <div class="shell">
-    <header class="topbar"><div class="brand"><div class="brand-mark">✳</div> CONTACT PROTOCOL</div><div class="top-status"><i class="dot"></i><span>CASE FILE 01 IS OPEN</span></div></header>
+    <header class="topbar"><div class="brand"><div class="brand-mark">✳</div> CONTACT PROTOCOL</div><div class="top-status"><i class="dot"></i><span>25 CASES ARE OPEN</span></div></header>
     <section id="homeView">
       <div class="hero">
-        <div><div class="eyebrow">A cooperative museum investigation</div><h1>The frame is here.<br/><span>The painting is not.</span></h1><p class="hero-copy">The Blue Hour vanished during a six-minute window. Compare private records, build a shared evidence trail, and reconstruct the theft before the case goes cold.</p><div class="hero-note"><b>✦</b> 2–8 INVESTIGATORS <span>·</span> ONE AUTHORED CASE <span>·</span> 15–20 MIN</div></div>
-        <div class="museum-art" aria-hidden="true"><div class="empty-frame"><span>THE BLUE HOUR<br/><small>MISSING · 6:20 PM</small></span></div><i class="evidence-tag tag-one">01 · FRAME</i><i class="evidence-tag tag-two">02 · BADGE LOG</i><i class="evidence-tag tag-three">03 · 6 MINUTES</i><div class="gallery-line"></div></div>
+        <div><div class="eyebrow">A cooperative case library</div><h1>Vote the case.<br/><span>Share the clues.</span></h1><p class="hero-copy">Choose a category together, then pick one of five unique cases. Every screen gets a different verified record. Eight rounds later, reconstruct the outcome—who, how, and what happens next.</p><div class="hero-note"><b>✦</b> 2–8 PLAYERS <span>·</span> 5 CATEGORIES · 25 CASES <span>·</span> 10–12 MIN</div></div>
+        <div class="museum-art" aria-hidden="true"><div class="empty-frame"><span>CASE LIBRARY<br/><small>5 × 5 OUTCOMES</small></span></div><i class="evidence-tag tag-one">01 · MYSTERY</i><i class="evidence-tag tag-two">02 · DEEP SPACE</i><i class="evidence-tag tag-three">03 · WORLD ATLAS</i><div class="gallery-line"></div></div>
       </div>
       <div class="lobby-card">
-        <div class="card-kicker">Open the Bellweather case</div><h2>Assemble your investigators.</h2><p>Create a room, share its six-character code, and examine the case from any phone or laptop.</p>
+        <div class="card-kicker">Open the library</div><h2>Assemble your investigators.</h2><p>Create a room, share its six-character code, and vote on the case from any phone or laptop.</p>
         <div class="entry-form"><div><label class="field-label" for="playerName">Your player name</label><input id="playerName" class="text-input" maxlength="18" placeholder="e.g. Nova" autocomplete="nickname" /></div><div class="actions"><button id="hostBtn" class="btn btn-primary">Create a room <span>↗</span></button><button id="showJoinBtn" class="btn btn-quiet">Join with a code</button></div><div id="joinFields" class="hidden"><label class="field-label" for="roomCode">Room code</label><input id="roomCode" class="text-input code-input" maxlength="6" placeholder="ENTER CODE" autocomplete="off"/><button id="joinBtn" class="btn btn-primary" style="width:100%;margin-top:9px">Join the game ↗</button></div></div>
-        <div class="smallprint">PRIVATE RECORDS · ROTATING LEAD · FINAL ACCUSATION</div>
+        <div class="smallprint">VOTE THE CASE · SHARE PRIVATE EVIDENCE · CLOSE THE OUTCOME</div>
         <div class="smallprint">NO DOWNLOAD · NO ACCOUNTS · PLAYER DEVICES CONNECT DIRECTLY</div>
       </div>
-      <div class="how"><div class="how-card"><div class="how-number">01 / EXAMINE</div><h3>Open an evidence file</h3><p>Investigate grounded records: timestamps, access logs, measurements, floor plans, and statements.</p></div><div class="how-card"><div class="how-number">02 / CONNECT</div><h3>Build the case trail</h3><p>Every investigator receives a different verified fact. Read it aloud and make one deduction together.</p></div><div class="how-card"><div class="how-number">03 / ACCUSE</div><h3>Reconstruct the theft</h3><p>Use all twelve findings to identify who took the painting, how it moved, and where it was hidden.</p></div></div>
+      <div class="how"><div class="how-card"><div class="how-number">01 / VOTE</div><h3>Pick the category, then the case</h3><p>Everyone votes. Majority wins. A tie opens a short runoff among the finalists.</p></div><div class="how-card"><div class="how-number">02 / EXAMINE</div><h3>Share what only you can see</h3><p>Each player gets a different verified fragment. The rotating Captain locks one deduction per round.</p></div><div class="how-card"><div class="how-number">03 / CLOSE</div><h3>Reach a real outcome</h3><p>After eight files, reconstruct the ending from the trail—then see how the evidence actually fits.</p></div></div>
     </section>
     <section id="gameView" class="hidden"></section>
-    <footer class="footer"><span>CONTACT PROTOCOL <span>·</span> THE MISSING MASTERPIECE</span><span>FOLLOW THE RECORD. CLOSE THE CASE.</span></footer>
+    <footer class="footer"><span>CONTACT PROTOCOL <span>·</span> 25 AUTHORED CASES</span><span>VOTE. INVESTIGATE. CLOSE THE OUTCOME.</span></footer>
   </div>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script type="module" src="./src/jeopardy-app.js"></script>

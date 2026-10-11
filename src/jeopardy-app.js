@@ -1,11 +1,14 @@
-import { CASE_FILE, CATEGORIES } from './content/case-clues.js';
+import { CASE_LIBRARY, caseById, categoryById } from './content/case-library.js';
 import {
   answerClue,
   advanceRound,
+  castSelectionVote,
   connectedPlayers,
   createGame,
+  createSelection,
   gameRank,
   revealClue,
+  resolveSelectionAfterDisconnect,
   selectClue,
   stateForPlayer,
   submitFinalAccusation
@@ -94,15 +97,22 @@ import { esc } from './game/text.js';
       toast('Invite at least one more player.');
       return;
     }
-    state.players.forEach((player) => { player.ready = false; });
-    state.game = createGame(players);
+    state.selection = createSelection();
+    state.game = null;
     sendState();
   }
 
   function resetGame() {
     if (!isHost) return;
+    state.selection = null;
     state.game = null;
     sendState();
+  }
+
+  function finishSelection(players) {
+    if (state.selection?.stage === 'complete' && !state.game) {
+      state.game = createGame(players, state.selection.selectedCaseId);
+    }
   }
 
   function handleAction(playerId, action, value) {
@@ -110,7 +120,12 @@ import { esc } from './game/text.js';
     const players = connectedPlayers(state);
     if (!players.some((player) => player.id === playerId)) return;
 
-    if (action === 'select' && state.game?.captainId === playerId) {
+    if (action === 'vote-selection' && state.selection && !state.game) {
+      if (castSelectionVote(state.selection, playerId, value, players)) {
+        finishSelection(players);
+        sendState();
+      }
+    } else if (action === 'select' && state.game?.captainId === playerId) {
       if (selectClue(state.game, value, players)) sendState();
     } else if (action === 'answer' && state.game?.phase === 'clue') {
       if (answerClue(state.game, playerId, value?.answer)) sendState();
@@ -165,6 +180,10 @@ import { esc } from './game/text.js';
       const player = state.players.find((candidate) => candidate.peerId === conn.peer);
       if (player) player.connected = false;
       ensureCaptain();
+      if (state.selection && !state.game) {
+        resolveSelectionAfterDisconnect(state.selection, connectedPlayers(state));
+        finishSelection(connectedPlayers(state));
+      }
       sendState();
     });
     conn.on('error', () => toast('A player connection dropped.'));
@@ -187,6 +206,7 @@ import { esc } from './game/text.js';
         room,
         players: [{ id: myId, peerId: id, name, host: true, connected: true }],
         connections: {},
+        selection: null,
         game: null
       };
       peer.on('connection', bindConnection);
@@ -262,6 +282,7 @@ import { esc } from './game/text.js';
   function crewMarkup(players) {
     return players.map((player) => {
       let status = player.host ? 'HOST' : 'CREW';
+      if (state.selection && !state.game) status = state.selection.votes[player.id] ? 'VOTED' : 'VOTING';
       if (state.game?.phase === 'board' && player.id === state.game.captainId) status = 'CHOOSING';
       if (state.game?.phase === 'clue') status = player.id === state.game.captainId ? 'DECIDING' : 'SHARING';
       if (state.game?.phase === 'finale') status = player.id === state.game.captainId ? 'ACCUSING' : 'REVIEWING';
@@ -276,46 +297,78 @@ import { esc } from './game/text.js';
     return `<section class="lobby-stage">
       <div class="lobby-orbit" aria-hidden="true"><span></span><span></span><i>?</i></div>
       <div class="lobby-copy">
-        <span class="stage-kicker">CASE 01 · BELLWEATHER MUSEUM</span>
-        <h1>The frame is here.<br/>The painting is not.</h1>
-        <p>${esc(CASE_FILE.opening)} Work through the evidence together, then reconstruct the theft in one final accusation.</p>
+        <span class="stage-kicker">25 OUTCOMES · 5 CATEGORIES</span>
+        <h1>Your crew chooses<br/>what happens next.</h1>
+        <p>Vote on a category, choose one of five grounded cases, then share private evidence through eight rounds that build toward a real outcome.</p>
         <div class="rule-row">
           <span><b>01</b> Share your fragment</span>
           <span><b>02</b> Talk it through</span>
           <span><b>03</b> Captain answers</span>
         </div>
         ${isHost
-          ? `<button id="startBtn" class="primary-action" ${players.length < 2 ? 'disabled' : ''}>Open the case file <span>↗</span></button>`
+          ? `<button id="startBtn" class="primary-action" ${players.length < 2 ? 'disabled' : ''}>Open the case library <span>↗</span></button>`
           : '<div class="waiting-line"><i></i> Waiting for the host to start</div>'}
         <small class="player-requirement">${players.length}/8 players connected · 2 required</small>
       </div>
     </section>`;
   }
 
+  function selectionMarkup(players) {
+    const selection = state.selection;
+    const myVote = selection.votes[myId];
+    const votedCount = Object.keys(selection.votes).length;
+    const choosingCategory = selection.stage === 'category';
+    const category = choosingCategory ? null : categoryById(selection.selectedCategoryId);
+    const candidates = choosingCategory
+      ? CASE_LIBRARY.filter((item) => selection.candidates.includes(item.id))
+      : category.cases.filter((item) => selection.candidates.includes(item.id));
+    const cards = candidates.map((item) => {
+      const selected = myVote === item.id;
+      const detail = choosingCategory
+        ? `${item.cases.length} outcomes · ${item.description}`
+        : item.hook;
+      const title = choosingCategory ? `${item.icon} ${item.name}` : item.title;
+      const subtitle = choosingCategory ? 'CATEGORY' : item.subtitle;
+      return `<button class="selection-card ${selected ? 'selected' : ''}" data-selection-vote="${item.id}" ${myVote ? 'disabled' : ''}>
+        <span>${esc(subtitle)}</span><h2>${esc(title)}</h2><p>${esc(detail)}</p><b>${selected ? 'YOUR VOTE ✓' : 'VOTE FOR THIS'}</b>
+      </button>`;
+    }).join('');
+    return `<section class="selection-stage">
+      <header class="selection-heading">
+        <span class="stage-kicker">${selection.runoff ? 'TIE · RUNOFF VOTE' : choosingCategory ? 'BALLOT 1 OF 2' : 'BALLOT 2 OF 2'}</span>
+        <h1>${choosingCategory ? 'What should we explore?' : `Choose a ${esc(category.name)} case.`}</h1>
+        <p>${selection.runoff ? 'The top choices tied. Vote once more between the finalists.' : choosingCategory ? 'Every player gets one private vote. The most popular category advances.' : 'Choose the outcome your crew wants to work toward.'}</p>
+      </header>
+      <div class="selection-grid">${cards}</div>
+      <div class="ballot-status"><span>${votedCount}/${players.length} votes locked</span><div>${players.map((player) => `<i class="${selection.votes[player.id] ? 'voted' : ''}">${esc(player.name.slice(0, 1).toUpperCase())}</i>`).join('')}</div><small>${myVote ? 'Vote locked. Waiting for the rest of the crew.' : 'Choose one card to lock your vote.'}</small></div>
+    </section>`;
+  }
+
   function boardMarkup(players) {
+    const caseFile = caseById(state.game.caseId);
     const captain = playerName(state.game.captainId);
     const canChoose = state.game.captainId === myId;
-    const columns = CATEGORIES.map((category) => {
-      const cells = category.clues.map((clue, index) => {
-        const key = `${category.id}:${index}`;
+    const columns = caseFile.sections.map((section) => {
+      const cells = section.rounds.map((clue, index) => {
+        const key = `${section.id}:${index}`;
         const used = state.game.used.includes(key);
         return `<button class="board-cell ${used ? 'used' : ''}" data-clue="${key}" ${used || !canChoose ? 'disabled' : ''}>
           ${used ? '<span>EVIDENCE LOGGED</span>' : `<b>${clue.value}</b><span>PTS</span>`}
         </button>`;
       }).join('');
       return `<div class="board-column">
-        <div class="category-head"><i>${category.icon}</i><b>${category.name}</b><span>${category.description}</span></div>
+        <div class="category-head"><i>${section.icon}</i><b>${esc(section.name)}</b><span>${esc(section.description)}</span></div>
         ${cells}
       </div>`;
     }).join('');
     return `<section class="board-stage">
       <div class="stage-heading">
-        <div><span class="stage-kicker">CASE FILE · ${esc(CASE_FILE.object.toUpperCase())}</span><h1>Choose an evidence file.</h1></div>
+        <div><span class="stage-kicker">${esc(caseFile.categoryName.toUpperCase())} · ${esc(caseFile.title.toUpperCase())}</span><h1>Choose an evidence file.</h1></div>
         <div class="captain-callout"><span>ROUND CAPTAIN</span><b>${esc(captain)}</b><small>${canChoose ? 'Your pick' : 'is choosing'}</small></div>
       </div>
       <div class="category-board">${columns}</div>
-      <p class="board-note">Complete all twelve files to unlock the final accusation. Harder deductions are worth more.</p>
-      ${state.game.history.length ? `<aside class="case-trail"><span>CASE TRAIL · ${state.game.history.length}/12</span><div>${state.game.history.slice(-4).map((item) => `<p><i>${item.answerCorrect ? '✓' : '•'}</i>${esc(item.evidence)}</p>`).join('')}</div></aside>` : ''}
+      <p class="board-note">Complete all eight files to unlock the final outcome. Harder deductions are worth more.</p>
+      ${state.game.history.length ? `<aside class="case-trail"><span>EVIDENCE TRAIL · ${state.game.history.length}/${state.game.maxRounds}</span><div>${state.game.history.slice(-4).map((item) => `<p><i>${item.answerCorrect ? '✓' : '•'}</i>${esc(item.evidence)}</p>`).join('')}</div></aside>` : ''}
     </section>`;
   }
 
@@ -396,7 +449,7 @@ import { esc } from './game/text.js';
       </div>
       <div class="next-round">
         ${captain
-          ? `<button id="advanceBtn" class="primary-action">${state.game.roundNumber >= state.game.maxRounds ? 'Build the final accusation' : 'Return to the evidence board'} <span>↗</span></button>`
+          ? `<button id="advanceBtn" class="primary-action">${state.game.roundNumber >= state.game.maxRounds ? 'Build the final outcome' : 'Return to the evidence board'} <span>↗</span></button>`
           : `<span class="waiting-line"><i></i> Waiting for ${esc(playerName(state.game.captainId))}</span>`}
       </div>
     </section>`;
@@ -404,63 +457,66 @@ import { esc } from './game/text.js';
 
   function finalOptionsMarkup(kind, options, interactive) {
     return options.map((option) => `<button class="case-option" ${interactive ? `data-final-kind="${kind}" data-final-id="${option.id}"` : 'disabled'}>
-      <b>${esc(option.name)}</b>${option.role ? `<span>${esc(option.role)}</span>` : ''}
+      <b>${esc(option.label)}</b>${option.detail ? `<span>${esc(option.detail)}</span>` : ''}
     </button>`).join('');
   }
 
   function finaleMarkup() {
+    const caseFile = caseById(state.game.caseId);
     const captain = state.game.captainId === myId;
     const captainName = playerName(state.game.captainId);
+    const fields = (interactive) => caseFile.finale.parts.map((part, index) => `<fieldset>
+      <legend>${index + 1} · ${esc(part.label)}</legend>
+      <div class="case-options">${finalOptionsMarkup(part.id, part.options, interactive)}</div>
+    </fieldset>`).join('');
     return `<section class="finale-stage">
       <header class="finale-heading">
         <span class="stage-kicker">ALL EVIDENCE COLLECTED</span>
-        <h1>Reconstruct the theft.</h1>
-        <p>Review the case trail together. The final Captain must identify who took ${esc(CASE_FILE.object)}, how it was moved, and where it was hidden.</p>
+        <h1>Complete the outcome.</h1>
+        <p>${esc(caseFile.finale.intro)}</p>
       </header>
       <div class="full-case-trail">
         ${state.game.history.map((item, index) => `<article><span>${String(index + 1).padStart(2, '0')}</span><div><small>${esc(item.category)}</small><p>${esc(item.evidence)}</p></div></article>`).join('')}
       </div>
       ${captain
         ? `<form id="finaleForm" class="accusation-panel">
-            <fieldset><legend>1 · Who took the painting?</legend><div class="case-options">${finalOptionsMarkup('suspect', CASE_FILE.suspects, true)}</div></fieldset>
-            <fieldset><legend>2 · How was it moved?</legend><div class="case-options">${finalOptionsMarkup('method', CASE_FILE.methods, true)}</div></fieldset>
-            <fieldset><legend>3 · Where was it hidden?</legend><div class="case-options">${finalOptionsMarkup('location', CASE_FILE.locations, true)}</div></fieldset>
-            <button class="primary-action lock-answer" type="submit">Submit the final accusation <span>↗</span></button>
+            ${fields(true)}
+            <button class="primary-action lock-answer" type="submit">Submit the final outcome <span>↗</span></button>
           </form>`
         : `<section class="accusation-panel spectator-panel">
-            <span class="stage-kicker">HELP YOUR FINAL CAPTAIN</span><h2>${esc(captainName)} will submit the accusation.</h2><p>Use the case trail to agree on all three parts before the final answer is locked.</p>
-            <fieldset><legend>Who took the painting?</legend><div class="case-options">${finalOptionsMarkup('suspect', CASE_FILE.suspects, false)}</div></fieldset>
-            <fieldset><legend>How was it moved?</legend><div class="case-options">${finalOptionsMarkup('method', CASE_FILE.methods, false)}</div></fieldset>
-            <fieldset><legend>Where was it hidden?</legend><div class="case-options">${finalOptionsMarkup('location', CASE_FILE.locations, false)}</div></fieldset>
+            <span class="stage-kicker">HELP YOUR FINAL CAPTAIN</span><h2>${esc(captainName)} will submit the outcome.</h2><p>Use the evidence trail to agree on all three findings before they are locked.</p>
+            ${fields(false)}
           </section>`}
     </section>`;
   }
 
-  function caseLabel(group, id) {
-    return CASE_FILE[group].find((option) => option.id === id)?.name || 'No answer';
+  function caseLabel(part, id) {
+    return part.options.find((option) => option.id === id)?.label || 'No answer';
   }
 
   function resultMarkup() {
+    const caseFile = caseById(state.game.caseId);
     const rank = gameRank(state.game);
     const correct = state.game.history.filter((round) => round.answerCorrect).length;
     const result = state.game.finalResult;
+    const verdicts = caseFile.finale.parts.map((part) => `<article class="${result.correct[part.id] ? 'correct' : 'incorrect'}">
+      <small>${esc(part.label.toUpperCase())}</small><span>Your conclusion</span>
+      <b>${esc(caseLabel(part, result.guess[part.id]))}</b>
+      <em>Evidence: ${esc(caseLabel(part, part.answer))}</em>
+    </article>`).join('');
     return `<section class="final-stage">
-      <div class="rank-seal"><span>CASE GRADE</span><b>${rank.grade}</b></div>
-      <span class="stage-kicker">${result.solved ? 'THE BLUE HOUR RECOVERED' : 'CASE RECONSTRUCTION COMPLETE'}</span>
+      <div class="rank-seal"><span>CREW GRADE</span><b>${rank.grade}</b></div>
+      <span class="stage-kicker">${esc(caseFile.categoryName.toUpperCase())} · ${esc(caseFile.title.toUpperCase())}</span>
       <h1>${rank.title}</h1>
       <p>${rank.detail}</p>
       <div class="final-stats">
         <span><b>${state.game.score}</b> points</span>
         <span><b>${correct}/${state.game.history.length}</b> deductions</span>
-        <span><b>${result.solvedParts}/3</b> final findings</span>
+        <span><b>${result.solvedParts}/${caseFile.finale.parts.length}</b> final findings</span>
       </div>
-      <div class="verdict-grid">
-        <article class="${result.correct.suspect ? 'correct' : 'incorrect'}"><small>WHO</small><span>Your accusation</span><b>${esc(caseLabel('suspects', result.guess.suspect))}</b><em>Evidence: ${esc(caseLabel('suspects', CASE_FILE.solution.suspect))}</em></article>
-        <article class="${result.correct.method ? 'correct' : 'incorrect'}"><small>HOW</small><span>Your accusation</span><b>${esc(caseLabel('methods', result.guess.method))}</b><em>Evidence: ${esc(caseLabel('methods', CASE_FILE.solution.method))}</em></article>
-        <article class="${result.correct.location ? 'correct' : 'incorrect'}"><small>WHERE</small><span>Your accusation</span><b>${esc(caseLabel('locations', result.guess.location))}</b><em>Evidence: ${esc(caseLabel('locations', CASE_FILE.solution.location))}</em></article>
-      </div>
-      <section class="reconstruction"><span class="stage-kicker">WHAT HAPPENED · 6:12–6:18 PM</span>${CASE_FILE.reconstruction.map((step, index) => `<p><b>${index + 1}</b>${esc(step)}</p>`).join('')}</section>
-      ${isHost ? '<button id="resetBtn" class="primary-action">Reopen the case <span>↗</span></button>' : '<div class="waiting-line"><i></i> Waiting for the host</div>'}
+      <div class="verdict-grid">${verdicts}</div>
+      <section class="reconstruction"><span class="stage-kicker">THE COMPLETE OUTCOME</span>${caseFile.reconstruction.map((step, index) => `<p><b>${index + 1}</b>${esc(step)}</p>`).join('')}</section>
+      ${isHost ? '<button id="resetBtn" class="primary-action">Choose another case <span>↗</span></button>' : '<div class="waiting-line"><i></i> Waiting for the host</div>'}
     </section>`;
   }
 
@@ -498,7 +554,8 @@ import { esc } from './game/text.js';
   function bindFinaleForm() {
     const form = $('#finaleForm');
     if (!form) return;
-    const guess = { suspect: null, method: null, location: null };
+    const parts = caseById(state.game.caseId).finale.parts;
+    const guess = Object.fromEntries(parts.map((part) => [part.id, null]));
     form.querySelectorAll('[data-final-kind]').forEach((button) => button.addEventListener('click', (event) => {
       event.preventDefault();
       const kind = button.dataset.finalKind;
@@ -507,8 +564,8 @@ import { esc } from './game/text.js';
     }));
     form.addEventListener('submit', (event) => {
       event.preventDefault();
-      if (!guess.suspect || !guess.method || !guess.location) {
-        toast('Complete all three parts of the accusation.');
+      if (parts.some((part) => !guess[part.id])) {
+        toast('Complete all three final findings.');
         return;
       }
       sendAction('accuse', guess);
@@ -520,7 +577,8 @@ import { esc } from './game/text.js';
     clearInterval(clockTimer);
     const players = connectedPlayers(state);
     let content;
-    if (!state.game) content = lobbyMarkup(players);
+    if (!state.game && state.selection) content = selectionMarkup(players);
+    else if (!state.game) content = lobbyMarkup(players);
     else if (state.game.phase === 'board') content = boardMarkup(players);
     else if (state.game.phase === 'clue') content = clueMarkup(players);
     else if (state.game.phase === 'reveal') content = revealMarkup(players);
@@ -534,7 +592,7 @@ import { esc } from './game/text.js';
         <a class="mini-brand" href="/" aria-label="Contact Protocol home"><i>✳</i><span>CONTACT<br/>PROTOCOL</span></a>
         <div class="room-tools"><span>ROOM</span><b>${esc(room || state.room)}</b><button id="copyCode" type="button">COPY ↗</button></div>
         <div class="game-metrics">
-          <span><small>ROUND</small><b>${state.game ? `${round}/${state.game.maxRounds}` : 'LOBBY'}</b></span>
+          <span><small>${state.selection && !state.game ? 'SELECTION' : 'ROUND'}</small><b>${state.game ? `${round}/${state.game.maxRounds}` : state.selection ? 'VOTE' : 'LOBBY'}</b></span>
           <span><small>CREW SCORE</small><b>${score.toLocaleString()}</b></span>
           <button id="fullscreenBtn" class="fullscreen-button" aria-label="Toggle fullscreen">⛶</button>
         </div>
@@ -547,6 +605,7 @@ import { esc } from './game/text.js';
     $('#startBtn')?.addEventListener('click', startGame);
     $('#resetBtn')?.addEventListener('click', resetGame);
     $('#advanceBtn')?.addEventListener('click', () => sendAction('advance'));
+    document.querySelectorAll('[data-selection-vote]').forEach((button) => button.addEventListener('click', () => sendAction('vote-selection', button.dataset.selectionVote)));
     document.querySelectorAll('[data-clue]').forEach((button) => button.addEventListener('click', () => sendAction('select', button.dataset.clue)));
     $('#fullscreenBtn')?.addEventListener('click', async () => {
       try {

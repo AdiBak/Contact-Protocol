@@ -1,15 +1,96 @@
-import { BOARD_SIZE, CASE_FILE, CATEGORIES, MAX_ROUNDS } from '../content/case-clues.js';
+import { CASE_LIBRARY, caseById, categoryById, roundCount } from '../content/case-library.js';
 
 export function connectedPlayers(state) {
   return state.players.filter((player) => player.connected);
 }
 
-export function createGame(players) {
+export function createSelection() {
   return {
+    stage: 'category',
+    candidates: CASE_LIBRARY.map((category) => category.id),
+    votes: {},
+    runoff: false,
+    runoffRound: 0,
+    selectedCategoryId: null,
+    selectedCaseId: null
+  };
+}
+
+function validSelectionChoice(selection, choiceId) {
+  if (!selection.candidates.includes(choiceId)) return false;
+  if (selection.stage === 'category') return Boolean(categoryById(choiceId));
+  if (selection.stage === 'case') {
+    return Boolean(categoryById(selection.selectedCategoryId)?.cases.some((caseFile) => caseFile.id === choiceId));
+  }
+  return false;
+}
+
+function resolveBallot(selection, players) {
+  const connectedIds = new Set(players.map((player) => player.id));
+  const votes = Object.entries(selection.votes).filter(([playerId]) => connectedIds.has(playerId));
+  if (!players.length || votes.length < players.length) return false;
+
+  const counts = new Map(selection.candidates.map((candidate) => [candidate, 0]));
+  votes.forEach(([, choiceId]) => counts.set(choiceId, (counts.get(choiceId) || 0) + 1));
+  const highest = Math.max(...counts.values());
+  let winners = [...counts.entries()].filter(([, count]) => count === highest).map(([choiceId]) => choiceId);
+
+  if (winners.length > 1 && selection.runoffRound > 0) {
+    const host = players.find((player) => player.host) || players[0];
+    const hostVote = selection.votes[host?.id];
+    winners = [winners.includes(hostVote) ? hostVote : winners.sort()[0]];
+  }
+
+  if (winners.length > 1) {
+    selection.candidates = winners;
+    selection.votes = {};
+    selection.runoff = true;
+    selection.runoffRound += 1;
+    return true;
+  }
+
+  const winner = winners[0];
+  if (selection.stage === 'category') {
+    const category = categoryById(winner);
+    selection.stage = 'case';
+    selection.selectedCategoryId = winner;
+    selection.candidates = category.cases.map((caseFile) => caseFile.id);
+    selection.votes = {};
+    selection.runoff = false;
+    selection.runoffRound = 0;
+  } else {
+    selection.stage = 'complete';
+    selection.selectedCaseId = winner;
+    selection.candidates = [];
+    selection.votes = {};
+    selection.runoff = false;
+  }
+  return true;
+}
+
+export function castSelectionVote(selection, playerId, choiceId, players) {
+  if (!selection || selection.stage === 'complete' || selection.votes[playerId]) return false;
+  if (!players.some((player) => player.id === playerId) || !validSelectionChoice(selection, choiceId)) return false;
+  selection.votes[playerId] = choiceId;
+  resolveBallot(selection, players);
+  return true;
+}
+
+export function resolveSelectionAfterDisconnect(selection, players) {
+  if (!selection || selection.stage === 'complete') return false;
+  return resolveBallot(selection, players);
+}
+
+export function createGame(players, caseId) {
+  const caseFile = caseById(caseId);
+  if (!caseFile) return null;
+  return {
+    caseId: caseFile.id,
+    categoryId: caseFile.categoryId,
     phase: 'board',
     score: 0,
     roundNumber: 0,
-    maxRounds: MAX_ROUNDS,
+    maxRounds: roundCount(caseFile),
     used: [],
     captainId: players[0]?.id || null,
     current: null,
@@ -18,19 +99,20 @@ export function createGame(players) {
   };
 }
 
-export function clueByKey(key) {
-  const [categoryId, clueIndexText] = String(key).split(':');
-  const category = CATEGORIES.find((candidate) => candidate.id === categoryId);
-  const clue = category?.clues[Number(clueIndexText)];
-  return category && clue ? { category, clue } : null;
+export function clueByKey(game, key) {
+  const [sectionId, clueIndexText] = String(key).split(':');
+  const caseFile = caseById(game.caseId);
+  const section = caseFile?.sections.find((candidate) => candidate.id === sectionId);
+  const clue = section?.rounds[Number(clueIndexText)];
+  return caseFile && section && clue ? { caseFile, section, clue } : null;
 }
 
 export function selectClue(game, key, players, now = Date.now()) {
   if (game.phase !== 'board' || game.used.includes(key)) return false;
-  const found = clueByKey(key);
+  const found = clueByKey(game, key);
   if (!found || players.length < 1) return false;
 
-  const { category, clue } = found;
+  const { section, clue } = found;
   const assignments = players.map((player, index) => ({
     playerId: player.id,
     text: clue.fragments[index % clue.fragments.length]
@@ -38,8 +120,8 @@ export function selectClue(game, key, players, now = Date.now()) {
 
   game.current = {
     key,
-    category: category.name,
-    icon: category.icon,
+    category: section.name,
+    icon: section.icon,
     value: clue.value,
     prompt: clue.prompt,
     display: clue.display,
@@ -95,7 +177,7 @@ export function advanceRound(game, players) {
   if (game.phase !== 'reveal') return false;
   const currentCaptainIndex = Math.max(0, players.findIndex((player) => player.id === game.captainId));
   game.captainId = players[(currentCaptainIndex + 1) % players.length]?.id || null;
-  if (game.roundNumber >= game.maxRounds || game.used.length >= BOARD_SIZE) {
+  if (game.roundNumber >= game.maxRounds) {
     game.phase = 'finale';
     game.current = null;
     return true;
@@ -107,24 +189,21 @@ export function advanceRound(game, players) {
 
 export function submitFinalAccusation(game, playerId, guess) {
   if (game.phase !== 'finale' || game.captainId !== playerId || !guess) return false;
-  const validSuspect = CASE_FILE.suspects.some((option) => option.id === guess.suspect);
-  const validMethod = CASE_FILE.methods.some((option) => option.id === guess.method);
-  const validLocation = CASE_FILE.locations.some((option) => option.id === guess.location);
-  if (!validSuspect || !validMethod || !validLocation) return false;
-
-  const correct = {
-    suspect: guess.suspect === CASE_FILE.solution.suspect,
-    method: guess.method === CASE_FILE.solution.method,
-    location: guess.location === CASE_FILE.solution.location
-  };
+  const caseFile = caseById(game.caseId);
+  if (!caseFile) return false;
+  const correct = {};
+  for (const part of caseFile.finale.parts) {
+    if (!part.options.some((option) => option.id === guess[part.id])) return false;
+    correct[part.id] = guess[part.id] === part.answer;
+  }
   const solvedParts = Object.values(correct).filter(Boolean).length;
-  const bonus = solvedParts * 200 + (solvedParts === 3 ? 600 : 0);
+  const bonus = solvedParts * 200 + (solvedParts === caseFile.finale.parts.length ? 600 : 0);
   game.score += bonus;
   game.finalResult = {
-    guess: { suspect: guess.suspect, method: guess.method, location: guess.location },
+    guess: Object.fromEntries(caseFile.finale.parts.map((part) => [part.id, guess[part.id]])),
     correct,
     solvedParts,
-    solved: solvedParts === 3,
+    solved: solvedParts === caseFile.finale.parts.length,
     bonus
   };
   game.phase = 'result';
@@ -132,14 +211,20 @@ export function submitFinalAccusation(game, playerId, guess) {
 }
 
 export function gameRank(game) {
-  if (game.finalResult?.solved && game.score >= 3200) return { title: 'Master Investigators', grade: 'S', detail: 'You reconstructed the theft and recovered The Blue Hour.' };
-  if (game.finalResult?.solved) return { title: 'Case Closed', grade: 'A', detail: 'Your final accusation matches every piece of physical and digital evidence.' };
-  if (game.finalResult?.solvedParts >= 2) return { title: 'Breakthrough Team', grade: 'B', detail: 'Most of your reconstruction was right, but one detail escaped the case file.' };
-  return { title: 'Case Remains Open', grade: 'C', detail: 'Review the reconstruction—the evidence will point more clearly on another attempt.' };
+  const caseFile = caseById(game.caseId);
+  if (game.finalResult?.solved && game.history.every((round) => round.answerCorrect)) return { title: caseFile?.successTitle || 'Outcome Achieved', grade: 'S', detail: 'Every deduction and final finding matched the evidence.' };
+  if (game.finalResult?.solved) return { title: caseFile?.successTitle || 'Outcome Achieved', grade: 'A', detail: 'Your final conclusion matches the complete evidence trail.' };
+  if (game.finalResult?.solvedParts >= 2) return { title: 'Near Breakthrough', grade: 'B', detail: 'Most of the final outcome was right, but one finding needs review.' };
+  return { title: 'Outcome Unresolved', grade: 'C', detail: 'Review the reconstruction and compare it with your final choices.' };
 }
 
 export function stateForPlayer(state, viewerId) {
   const safe = JSON.parse(JSON.stringify(state, (key, value) => key === 'connections' ? undefined : value));
+  if (safe.selection && safe.selection.stage !== 'complete') {
+    Object.keys(safe.selection.votes).forEach((playerId) => {
+      if (playerId !== viewerId) safe.selection.votes[playerId] = true;
+    });
+  }
   if (safe.game?.phase === 'clue' && safe.game.current) {
     safe.game.current.assignments.forEach((assignment) => {
       if (assignment.playerId !== viewerId) delete assignment.text;
